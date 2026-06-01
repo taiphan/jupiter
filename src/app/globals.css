@@ -1,0 +1,177 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/*
+ * Jira Clone Theme — Atlassian-inspired blue palette.
+ * Brand:
+ *   - Primary blue: #0052CC (CTA, accents)
+ *   - Hover blue:   #0747A6
+ *   - Sidebar navy: #0c1e3e
+ *   - Surface:      #ffffff / #f4f5f7
+ *   - Text:         #172b4d / #6b778c
+ */
+
+:root {
+  --background: #ffffff;
+  --foreground: #172b4d;
+  --card: #ffffff;
+  --card-foreground: #172b4d;
+  --popover: #ffffff;
+  --popover-foreground: #172b4d;
+
+  --primary: #0052cc;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f4f5f7;
+  --secondary-foreground: #172b4d;
+
+  --muted: #f4f5f7;
+  --muted-foreground: #6b778c;
+
+  --accent: #deebff;
+  --accent-foreground: #0747a6;
+
+  --destructive: #de350b;
+
+  --border: #dfe1e6;
+  --input: #dfe1e6;
+  --ring: #4c9aff;
+
+  --chart-1: #0052cc;
+  --chart-2: #36b37e;
+  --chart-3: #ffab00;
+  --chart-4: #ff5630;
+  --chart-5: #6554c0;
+
+  --radius: 0.5rem;
+
+  --sidebar: #0c1e3e;
+  --sidebar-foreground: #c1c7d0;
+  --sidebar-primary: #4c9aff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #172b4d;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #4c9aff;
+}
+
+.dark {
+  --background: #0d1117;
+  --foreground: #e6edf3;
+  --card: #161b22;
+  --card-foreground: #e6edf3;
+  --popover: #161b22;
+  --popover-foreground: #e6edf3;
+
+  --primary: #4c9aff;
+  --primary-foreground: #0d1117;
+
+  --secondary: #1c2128;
+  --secondary-foreground: #c9d1d9;
+
+  --muted: #1c2128;
+  --muted-foreground: #8b949e;
+
+  --accent: #1f3357;
+  --accent-foreground: #c8d8ff;
+
+  --destructive: #f85149;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #4c9aff;
+
+  --chart-1: #4c9aff;
+  --chart-2: #57d9a3;
+  --chart-3: #ffd351;
+  --chart-4: #ff7452;
+  --chart-5: #998dd9;
+
+  --sidebar: #060a14;
+  --sidebar-foreground: #c1c7d0;
+  --sidebar-primary: #4c9aff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #0c1e3e;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-ring: #4c9aff;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  html {
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+}
+
+/* Scrollbar */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+}

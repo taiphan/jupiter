@@ -1,0 +1,7 @@
+.kiro/
+.claude/
+.cursor/
+.vscode/
+*.test.ts
+*.test.tsx
+coverage/
