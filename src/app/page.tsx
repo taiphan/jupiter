@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, ListTodo, FolderKanban, Activity } from 'lucide-react';
-import { AppHeader } from '@/components/layout/app-header';
+import { ArrowRight } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -56,33 +56,26 @@ export default function MyWorkPage() {
   const handleOpen = (issue: Issue) => setOpenIssueId(issue.id);
 
   return (
-    <>
-      <AppHeader title="My Work" description={`Welcome back, ${user?.name}`} />
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <PageHeader
+        title="Your work"
+        description={user ? `Welcome back, ${user.name.split(' ')[0]} · ${ROLE_LABELS[user.role]}` : undefined}
+      />
+
       <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-6xl space-y-6">
-          {/* Welcome banner */}
-          <Card className="overflow-hidden">
-            <CardContent className="flex flex-wrap items-center gap-4 p-5">
-              <div className="flex-1 min-w-[260px]">
-                <h2 className="text-xl font-bold">Hello, {user?.name?.split(' ')[0]} 👋</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  You&apos;re signed in as <strong>{user && ROLE_LABELS[user.role]}</strong>.
-                  Here&apos;s what&apos;s on your plate today.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <StatBlock icon={ListTodo} label="Assigned to you" value={stats.myOpen} accent="text-primary" />
-                <StatBlock icon={Activity} label="In progress" value={stats.inProgress} accent="text-blue-600 dark:text-blue-400" />
-                <StatBlock icon={FolderKanban} label="Open issues" value={stats.open} accent="text-emerald-600 dark:text-emerald-400" />
-              </div>
-            </CardContent>
-          </Card>
+          {/* KPI strip */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <KpiCard label="Assigned to you" value={stats.myOpen} accent="text-primary" />
+            <KpiCard label="In progress" value={stats.inProgress} accent="text-blue-600 dark:text-blue-400" />
+            <KpiCard label="Open across workspace" value={stats.open} accent="text-emerald-600 dark:text-emerald-400" />
+          </div>
 
           {/* Assigned to me */}
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-base">Assigned to me</CardTitle>
+                <CardTitle className="text-sm">Assigned to me</CardTitle>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Open issues where you&apos;re the assignee
                 </p>
@@ -109,10 +102,9 @@ export default function MyWorkPage() {
           </Card>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* Reported by me */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Reported by me</CardTitle>
+                <CardTitle className="text-sm">Reported by me</CardTitle>
                 <p className="mt-0.5 text-xs text-muted-foreground">Issues you&apos;ve created</p>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -126,15 +118,14 @@ export default function MyWorkPage() {
               </CardContent>
             </Card>
 
-            {/* Recent activity */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Recently updated</CardTitle>
+                <CardTitle className="text-sm">Recently updated</CardTitle>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Across all projects
                 </p>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2">
                 {recentlyUpdated.map((i) => {
                   const project = projects.find((p) => p.id === i.projectId);
                   const assignee = i.assigneeId ? members.find((m) => m.id === i.assigneeId) : undefined;
@@ -149,9 +140,7 @@ export default function MyWorkPage() {
                       <span className="flex-1 truncate text-sm">{i.summary}</span>
                       <Badge variant="outline" className="text-[10px]">{STATUS_LABELS[i.status]}</Badge>
                       <span className="text-[11px] text-muted-foreground">{timeAgo(i.updatedAt)}</span>
-                      {project && (
-                        <span className="text-[11px] text-muted-foreground">· {project.key}</span>
-                      )}
+                      {project && <span className="text-[11px] text-muted-foreground">· {project.key}</span>}
                       {assignee && <span className="text-[11px] text-muted-foreground">· {assignee.name.split(' ')[0]}</span>}
                     </button>
                   );
@@ -163,7 +152,7 @@ export default function MyWorkPage() {
           {/* Pinned projects */}
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-base">Your projects</CardTitle>
+              <CardTitle className="text-sm">Your projects</CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
@@ -208,26 +197,18 @@ export default function MyWorkPage() {
       </main>
 
       <IssueDialog issueId={openIssueId} onClose={() => setOpenIssueId(null)} />
-    </>
+    </div>
   );
 }
 
-function StatBlock({
-  icon: Icon, label, value, accent,
-}: {
-  icon: typeof ListTodo;
-  label: string;
-  value: number;
-  accent: string;
-}) {
+function KpiCard({ label, value, accent }: { label: string; value: number; accent?: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border bg-background px-3 py-2">
-      <Icon className={`h-4 w-4 ${accent}`} aria-hidden="true" />
-      <div>
-        <p className="text-lg font-bold leading-none">{value}</p>
-        <p className="text-[10px] text-muted-foreground">{label}</p>
-      </div>
-    </div>
+    <Card>
+      <CardContent className="p-5">
+        <p className={`text-3xl font-bold leading-none ${accent ?? ''}`}>{value}</p>
+        <p className="mt-2 text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      </CardContent>
+    </Card>
   );
 }
 

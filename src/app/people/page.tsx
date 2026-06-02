@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { AppHeader } from '@/components/layout/app-header';
+import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useProjectsStore } from '@/lib/projects-store';
@@ -30,8 +30,11 @@ export default function PeoplePage() {
   );
 
   return (
-    <>
-      <AppHeader title="People" description={`${members.length} members in this workspace`} />
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <PageHeader
+        title="Teams"
+        description={`${members.length} members in this workspace`}
+      />
       <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-5xl">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -69,7 +72,7 @@ export default function PeoplePage() {
           </div>
         </div>
       </main>
-    </>
+    </div>
   );
 }
 

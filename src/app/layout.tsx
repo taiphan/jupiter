@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Jira Clone — Project Tracker',
-  description: 'Plan, track, and ship your work. A lightweight project tracker.',
+  title: 'FE CREDIT — Jira',
+  description: 'Plan, track, and ship work across the FE CREDIT engineering teams.',
 };
 
 export default function RootLayout({

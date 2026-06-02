@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Database, Sparkles, Trash2 } from 'lucide-react';
-import { AppHeader } from '@/components/layout/app-header';
+import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,11 +36,10 @@ export default function SettingsPage() {
   const permissions = getPermissionsForRole(user.role);
 
   return (
-    <>
-      <AppHeader title="Settings" description="Workspace preferences" />
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <PageHeader title="Settings" description="Workspace preferences and account info" />
       <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-3xl space-y-6">
-          {/* Profile */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Profile</CardTitle>
@@ -55,7 +54,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Permissions */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Your permissions</CardTitle>
@@ -70,18 +68,16 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Appearance */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Appearance</CardTitle>
-              <CardDescription>Theme is configured from the header toggle</CardDescription>
+              <CardDescription>Theme is configured from the global header toggle</CardDescription>
             </CardHeader>
             <CardContent>
               <Row label="Theme" value={themeMode} />
             </CardContent>
           </Card>
 
-          {/* Workspace data */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
@@ -143,7 +139,7 @@ export default function SettingsPage() {
           )}
         </div>
       </main>
-    </>
+    </div>
   );
 }
 

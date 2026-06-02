@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertCircle, Sparkles } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useAuthStore, DEMO_USERS } from '@/lib/auth-store';
 import { ROLE_LABELS } from '@/lib/permissions';
 import { initials } from '@/lib/utils';
@@ -31,75 +31,40 @@ export function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left brand panel */}
-      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-[#0052cc] via-[#0747a6] to-[#0c1e3e] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 rounded-full bg-white/20 blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-white/10 blur-3xl" />
+    <div className="min-h-screen bg-[var(--background)]">
+      {/* Atlassian-style top bar */}
+      <header className="flex h-12 items-center border-b bg-card px-4">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded bg-primary text-[10px] font-black text-primary-foreground">
+            J
+          </span>
+          <span className="text-sm font-semibold">Jira</span>
         </div>
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center font-black text-lg">
-              JC
-            </div>
-            <div>
-              <span className="text-lg font-bold">Jira Clone</span>
-              <p className="text-[11px] text-blue-100/80">Project tracker for modern teams</p>
-            </div>
-          </div>
+      </header>
 
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold leading-tight">
-              Plan, track, and<br />ship your work.
-            </h2>
-            <p className="text-blue-100 text-sm leading-relaxed max-w-md">
-              Boards, backlogs, and issue tracking — all the essentials for getting work
-              done, without the bloat.
+      <main className="flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-12">
+        <div className="w-full max-w-[400px] rounded-lg border bg-card p-8 ds-shadow-raised">
+          {/* FE CREDIT mark */}
+          <div className="mb-6 flex flex-col items-center text-center">
+            <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-md bg-[#E31837] text-sm font-black text-white">
+              FC
+            </span>
+            <h1 className="text-xl font-semibold">Log in to FE CREDIT</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Welcome back. Sign in to continue to Jira.
             </p>
-            <div className="grid grid-cols-2 gap-4 pt-4">
-              <Stat label="Projects" value="Unlimited" />
-              <Stat label="Issue types" value="5+" />
-              <Stat label="Workflows" value="Customizable" />
-              <Stat label="Roles" value="4" />
-            </div>
           </div>
 
-          <p className="text-blue-200 text-xs flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3" aria-hidden="true" />
-            Built on Next.js 16 · React 19 · Tailwind v4
-          </p>
-        </div>
-      </div>
-
-      {/* Right login form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-[380px]">
-          <div className="mb-8">
-            <div className="lg:hidden flex items-center gap-2 mb-6">
-              <div className="w-9 h-9 rounded-xl bg-[#0052cc] flex items-center justify-center">
-                <span className="text-sm font-black text-white">JC</span>
-              </div>
-              <span className="font-semibold">Jira Clone</span>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
-              <p className="text-sm text-muted-foreground mt-1.5">
-                Sign in to your workspace
-              </p>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                <AlertCircle className="w-4 h-4 text-destructive shrink-0" aria-hidden="true" />
-                <p className="text-sm text-destructive">{error}</p>
+              <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
+                <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" aria-hidden="true" />
+                <p className="text-xs text-destructive">{error}</p>
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label htmlFor="username" className="block text-[13px] font-medium">
+              <label htmlFor="username" className="block text-[12px] font-medium">
                 Username
               </label>
               <input
@@ -110,8 +75,8 @@ export function LoginForm() {
                   setUsername(e.target.value);
                   setError('');
                 }}
-                className="w-full h-10 px-3.5 bg-background border border-input rounded-lg text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
-                placeholder="admin"
+                className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
+                placeholder="Enter username"
                 required
                 autoComplete="username"
                 autoFocus
@@ -119,7 +84,7 @@ export function LoginForm() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="password" className="block text-[13px] font-medium">
+              <label htmlFor="password" className="block text-[12px] font-medium">
                 Password
               </label>
               <input
@@ -130,7 +95,7 @@ export function LoginForm() {
                   setPassword(e.target.value);
                   setError('');
                 }}
-                className="w-full h-10 px-3.5 bg-background border border-input rounded-lg text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
+                className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
                 placeholder="Enter password"
                 required
                 autoComplete="current-password"
@@ -140,17 +105,17 @@ export function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-10 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+              className="w-full h-10 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Signing in...' : 'Continue'}
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t">
-            <p className="text-[12px] font-medium text-muted-foreground mb-3">
-              Demo accounts (click to auto-fill)
+          <div className="mt-6 border-t pt-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              Demo accounts
             </p>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {DEMO_USERS.map(({ user, password: pw, username: uname }) => (
                 <button
                   key={uname}
@@ -160,43 +125,33 @@ export function LoginForm() {
                     setPassword(pw);
                     setError('');
                   }}
-                  className="w-full flex items-center gap-3 p-2.5 rounded-lg border border-border hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
+                  className="flex w-full items-center gap-2.5 rounded-md border border-transparent p-2 text-left transition-colors hover:bg-muted cursor-pointer"
                 >
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white"
                     style={{ backgroundColor: user.avatarColor }}
                   >
                     {initials(user.name)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-medium group-hover:text-primary transition-colors">
-                      {user.name}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {ROLE_LABELS[user.role]} · {user.title}
+                    <p className="text-xs font-medium truncate">{user.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {ROLE_LABELS[user.role]}
                     </p>
                   </div>
-                  <code className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded hidden sm:block">
-                    {uname}
+                  <code className="hidden text-[10px] text-muted-foreground sm:inline">
+                    {uname} / {pw}
                   </code>
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-muted-foreground text-center mt-3">
-              Password: <code className="px-1 py-0.5 bg-muted rounded">{'<role>'}123</code>
-            </p>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      </main>
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="p-3 rounded-lg bg-white/10 backdrop-blur">
-      <p className="text-base font-bold">{value}</p>
-      <p className="text-[11px] text-blue-100">{label}</p>
+      <footer className="border-t bg-card px-4 py-3 text-center text-[11px] text-muted-foreground">
+        © 2026 FE CREDIT · Atlassian-style project tracker
+      </footer>
     </div>
   );
 }

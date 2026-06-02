@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
-import { AppHeader } from '@/components/layout/app-header';
+import { Plus, Star } from 'lucide-react';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -47,7 +47,7 @@ export default function ProjectsPage() {
     }
     if (!leadId) return setError('Pick a lead');
 
-    const created = createProject({
+    createProject({
       key: key.toUpperCase(),
       name: name.trim(),
       description: description.trim() || undefined,
@@ -58,20 +58,18 @@ export default function ProjectsPage() {
     setName('');
     setDescription('');
     setLeadId(user?.id ?? '');
-    // Optionally we could navigate to the new project's board
-    return created;
   };
 
   return (
-    <>
-      <AppHeader
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <PageHeader
         title="Projects"
-        description="Browse all projects in your workspace"
+        description={`${projects.length} ${projects.length === 1 ? 'project' : 'projects'} in your workspace`}
         actions={
           canCreate ? (
             <Button size="sm" className="cursor-pointer gap-1.5" onClick={() => setOpen(true)}>
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              New project
+              Create project
             </Button>
           ) : null
         }
@@ -79,59 +77,65 @@ export default function ProjectsPage() {
 
       <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-6xl">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((p) => {
-              const lead = members.find((m) => m.id === p.leadId);
-              const projectIssues = issues.filter((i) => i.projectId === p.id);
-              const open = projectIssues.filter((i) => i.status !== 'done').length;
-              const inProgress = projectIssues.filter((i) => i.status === 'in-progress').length;
+          {/* Atlassian-style table */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="grid grid-cols-[auto_2fr_1fr_1fr_120px] items-center gap-3 border-b bg-muted/30 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="w-6" />
+                <span>Name</span>
+                <span>Key</span>
+                <span>Lead</span>
+                <span className="text-right">Issues</span>
+              </div>
+              {projects.map((p) => {
+                const lead = members.find((m) => m.id === p.leadId);
+                const projectIssues = issues.filter((i) => i.projectId === p.id);
+                const open = projectIssues.filter((i) => i.status !== 'done').length;
 
-              return (
-                <Link
-                  key={p.id}
-                  href={`/projects/${p.key}`}
-                  className="group block rounded-lg border bg-card p-5 transition-all hover:border-primary/40 hover:shadow-md"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-sm font-bold text-primary">
-                      {p.key}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold truncate group-hover:text-primary transition-colors">
-                        {p.name}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-                        {p.description ?? 'No description'}
-                      </p>
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/projects/${p.key}`}
+                    className="grid grid-cols-[auto_2fr_1fr_1fr_120px] items-center gap-3 border-b px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/40"
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); /* star toggle: no-op for now */ }}
+                      className="text-muted-foreground hover:text-foreground cursor-pointer"
+                      aria-label="Star project"
+                    >
+                      <Star className="h-3.5 w-3.5" />
+                    </button>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-primary/10 text-[10px] font-bold text-primary">
+                        {p.key}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-primary">{p.name}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          {p.description ?? 'No description'}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="mt-4 flex items-center gap-2">
-                    <UserAvatar member={lead} size="sm" />
-                    <span className="text-[11px] text-muted-foreground">
-                      Lead · {lead?.name ?? '—'}
-                    </span>
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-3 gap-2 border-t pt-3 text-center">
-                    <Stat label="Total" value={projectIssues.length} />
-                    <Stat label="Open" value={open} />
-                    <Stat label="WIP" value={inProgress} />
-                  </div>
-                </Link>
-              );
-            })}
-
-            {projects.length === 0 && (
-              <Card className="sm:col-span-2 lg:col-span-3">
-                <CardContent className="p-10 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    No projects yet. {canCreate ? 'Create the first one.' : 'Ask an admin to create one.'}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                    <code className="text-xs text-muted-foreground">{p.key}</code>
+                    <div className="flex items-center gap-2">
+                      <UserAvatar member={lead} size="sm" />
+                      <span className="truncate text-xs">{lead?.name ?? '—'}</span>
+                    </div>
+                    <div className="text-right text-xs">
+                      <span className="font-medium">{open}</span>
+                      <span className="text-muted-foreground"> / {projectIssues.length}</span>
+                    </div>
+                  </Link>
+                );
+              })}
+              {projects.length === 0 && (
+                <div className="p-10 text-center text-sm text-muted-foreground">
+                  No projects yet. {canCreate ? 'Create the first one.' : 'Ask an admin to create one.'}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
 
@@ -139,8 +143,8 @@ export default function ProjectsPage() {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>New project</DialogTitle>
-              <DialogDescription>Create a workspace for tracking related work.</DialogDescription>
+              <DialogTitle>Create project</DialogTitle>
+              <DialogDescription>Spin up a workspace for related work.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               {error && (
@@ -185,15 +189,6 @@ export default function ProjectsPage() {
           </DialogContent>
         </Dialog>
       )}
-    </>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <p className="text-base font-bold leading-none">{value}</p>
-      <p className="mt-0.5 text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
     </div>
   );
 }

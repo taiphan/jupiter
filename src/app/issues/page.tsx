@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { AppHeader } from '@/components/layout/app-header';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useIssuesStore, applyFilters, type IssueFilters } from '@/lib/issues-store';
@@ -29,19 +29,20 @@ export default function IssuesPage() {
   );
 
   return (
-    <>
-      <AppHeader
-        title="Issues"
-        description="Search across the workspace"
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <PageHeader
+        title="Filters"
+        description="Workspace-wide issue search"
         actions={
           canCreate ? (
             <Button size="sm" className="cursor-pointer gap-1.5" onClick={() => setCreateOpen(true)}>
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              New issue
+              Create issue
             </Button>
           ) : null
         }
       />
+
       <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-6xl space-y-4">
           <IssueFiltersBar filters={filters} onChange={setFilters} showProject />
@@ -72,6 +73,6 @@ export default function IssuesPage() {
         onClose={() => setCreateOpen(false)}
         onCreated={(id) => setOpenIssueId(id)}
       />
-    </>
+    </div>
   );
 }
