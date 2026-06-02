@@ -403,6 +403,15 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
             </Select>
           </FieldRow>
 
+          <FieldRow label="Sprint">
+            <SprintSelect
+              issueId={issue.id}
+              projectId={issue.projectId}
+              currentSprintId={issue.sprintId}
+              disabled={!canEdit}
+            />
+          </FieldRow>
+
           <FieldRow label="Story points">
             {canEdit ? (
               <Input
@@ -481,5 +490,46 @@ function FieldRow({ label, children }: { label: string; children: React.ReactNod
       </div>
       {children}
     </div>
+  );
+}
+
+import { useSprintsStore } from '@/lib/sprints-store';
+
+function SprintSelect({
+  issueId, projectId, currentSprintId, disabled,
+}: {
+  issueId: string;
+  projectId: string;
+  currentSprintId?: string;
+  disabled?: boolean;
+}) {
+  const sprints = useSprintsStore((s) => s.getSprintsByProject(projectId));
+  const updateIssue = useIssuesStore((s) => s.updateIssue);
+  const user = useAuthStore((s) => s.user);
+
+  const value = currentSprintId ?? '__none';
+  const visibleSprints = sprints.filter((s) => s.state !== 'completed');
+
+  return (
+    <Select
+      disabled={disabled}
+      value={value}
+      onValueChange={(v) => {
+        if (!user) return;
+        updateIssue(issueId, { sprintId: !v || v === '__none' ? undefined : v }, user.id);
+      }}
+    >
+      <SelectTrigger className="h-8 text-xs" aria-label="Sprint">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none">Backlog (no sprint)</SelectItem>
+        {visibleSprints.map((s) => (
+          <SelectItem key={s.id} value={s.id}>
+            {s.name} {s.state === 'active' ? '· Active' : ''}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

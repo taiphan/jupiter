@@ -107,6 +107,8 @@ export const issueSchema = z.object({
   labels: z.array(z.string()).default([]),
   /** Parent issue id (for epic→story or story→subtask) */
   parentId: z.string().optional(),
+  /** Sprint this issue is committed to */
+  sprintId: z.string().optional(),
   storyPoints: z.number().int().nonnegative().optional(),
   /** Position within its column for stable ordering on the board */
   rank: z.number(),
@@ -152,13 +154,36 @@ export interface ActivityEntry {
   createdAt: string;
 }
 
-// ─── Member (lightweight directory; auth lives in auth-store) ───────────────
-
-export interface Member {
+export type Member = {
   id: string;
   name: string;
   username: string;
   email: string;
   avatarColor: string;
   title?: string;
+};
+
+// ─── Sprint ─────────────────────────────────────────────────────────────────
+
+export const SPRINT_STATES = ['planned', 'active', 'completed'] as const;
+export type SprintState = (typeof SPRINT_STATES)[number];
+
+export const SPRINT_STATE_LABELS: Record<SprintState, string> = {
+  planned: 'Planned',
+  active: 'Active',
+  completed: 'Completed',
+};
+
+export interface Sprint {
+  id: string;
+  projectId: string;
+  /** Sequential index per project, used in default names */
+  number: number;
+  name: string;
+  goal?: string;
+  state: SprintState;
+  startDate?: string;
+  endDate?: string;
+  /** Set when the sprint is completed */
+  completedAt?: string;
 }

@@ -1,4 +1,4 @@
-import type { Project, Issue, Comment, ActivityEntry, Member } from './types';
+import type { Project, Issue, Comment, ActivityEntry, Member, Sprint } from './types';
 import { DEMO_USERS } from './auth-store';
 
 export const SEED_MEMBERS: Member[] = DEMO_USERS.map((u) => ({
@@ -58,7 +58,7 @@ export const SEED_ISSUES: Issue[] = [
     description: 'Refresh hero, pricing, and customer stories pages.',
     status: 'in-progress', priority: 'high',
     assigneeId: 'usr_lead', reporterId: 'usr_admin',
-    labels: ['design', 'q3'], rank: 1000,
+    labels: ['design', 'q3'], rank: 1000, sprintId: 'spr_web_3',
     createdAt: earlier, updatedAt: yesterday,
   },
   {
@@ -67,7 +67,7 @@ export const SEED_ISSUES: Issue[] = [
     description: 'Update headline copy and visuals on homepage.',
     status: 'in-progress', priority: 'high',
     assigneeId: 'usr_member', reporterId: 'usr_lead',
-    labels: ['design'], parentId: 'iss_web_1', storyPoints: 3, rank: 2000,
+    labels: ['design'], parentId: 'iss_web_1', storyPoints: 3, rank: 2000, sprintId: 'spr_web_3',
     createdAt: earlier, updatedAt: yesterday,
   },
   {
@@ -75,7 +75,7 @@ export const SEED_ISSUES: Issue[] = [
     summary: 'Audit current pricing page metrics',
     status: 'todo', priority: 'medium',
     assigneeId: 'usr_member', reporterId: 'usr_lead',
-    labels: ['analytics'], storyPoints: 2, rank: 3000,
+    labels: ['analytics'], storyPoints: 2, rank: 3000, sprintId: 'spr_web_3',
     createdAt: earlier, updatedAt: earlier,
   },
   {
@@ -84,7 +84,7 @@ export const SEED_ISSUES: Issue[] = [
     description: 'Tap target is unresponsive after closing once.',
     status: 'in-review', priority: 'highest',
     assigneeId: 'usr_member', reporterId: 'usr_admin',
-    labels: ['mobile', 'safari'], storyPoints: 1, rank: 4000,
+    labels: ['mobile', 'safari'], storyPoints: 1, rank: 4000, sprintId: 'spr_web_3',
     createdAt: earlier, updatedAt: now,
   },
   {
@@ -92,7 +92,7 @@ export const SEED_ISSUES: Issue[] = [
     summary: 'Set up analytics events for CTA clicks',
     status: 'done', priority: 'low',
     assigneeId: 'usr_member', reporterId: 'usr_lead',
-    labels: ['analytics'], storyPoints: 2, rank: 5000,
+    labels: ['analytics'], storyPoints: 2, rank: 5000, sprintId: 'spr_web_2',
     createdAt: earlier, updatedAt: yesterday,
   },
   {
@@ -126,7 +126,7 @@ export const SEED_ISSUES: Issue[] = [
     summary: 'Onboarding redesign',
     status: 'in-progress', priority: 'high',
     assigneeId: 'usr_lead', reporterId: 'usr_admin',
-    labels: ['onboarding'], rank: 1000,
+    labels: ['onboarding'], rank: 1000, sprintId: 'spr_mob_1',
     createdAt: earlier, updatedAt: now,
   },
   {
@@ -134,7 +134,7 @@ export const SEED_ISSUES: Issue[] = [
     summary: 'New welcome carousel',
     status: 'todo', priority: 'medium',
     assigneeId: 'usr_member', reporterId: 'usr_lead',
-    labels: ['onboarding'], parentId: 'iss_mob_1', storyPoints: 3, rank: 2000,
+    labels: ['onboarding'], parentId: 'iss_mob_1', storyPoints: 3, rank: 2000, sprintId: 'spr_mob_1',
     createdAt: earlier, updatedAt: earlier,
   },
   {
@@ -142,7 +142,7 @@ export const SEED_ISSUES: Issue[] = [
     summary: 'App crashes on cold start (Android 13)',
     status: 'in-progress', priority: 'highest',
     assigneeId: 'usr_member', reporterId: 'usr_admin',
-    labels: ['crash', 'android'], storyPoints: 5, rank: 3000,
+    labels: ['crash', 'android'], storyPoints: 5, rank: 3000, sprintId: 'spr_mob_1',
     createdAt: earlier, updatedAt: now,
   },
   {
@@ -168,7 +168,7 @@ export const SEED_ISSUES: Issue[] = [
     summary: 'Migrate CI to GitHub Actions',
     status: 'in-progress', priority: 'high',
     assigneeId: 'usr_admin', reporterId: 'usr_admin',
-    labels: ['ci'], storyPoints: 5, rank: 1000,
+    labels: ['ci'], storyPoints: 5, rank: 1000, sprintId: 'spr_plat_2',
     createdAt: earlier, updatedAt: now,
   },
   {
@@ -176,7 +176,7 @@ export const SEED_ISSUES: Issue[] = [
     summary: 'Add OpenTelemetry traces to API gateway',
     status: 'todo', priority: 'medium',
     assigneeId: 'usr_member', reporterId: 'usr_admin',
-    labels: ['observability'], storyPoints: 3, rank: 2000,
+    labels: ['observability'], storyPoints: 3, rank: 2000, sprintId: 'spr_plat_2',
     createdAt: earlier, updatedAt: earlier,
   },
   {
@@ -184,7 +184,7 @@ export const SEED_ISSUES: Issue[] = [
     summary: 'Webhook retries duplicating events',
     status: 'in-review', priority: 'high',
     assigneeId: 'usr_member', reporterId: 'usr_admin',
-    labels: ['webhooks'], storyPoints: 3, rank: 3000,
+    labels: ['webhooks'], storyPoints: 3, rank: 3000, sprintId: 'spr_plat_2',
     createdAt: earlier, updatedAt: yesterday,
   },
   {
@@ -227,5 +227,59 @@ export const SEED_ACTIVITY: ActivityEntry[] = [
   {
     id: 'act_3', issueId: 'iss_web_4', actorId: 'usr_member',
     kind: 'status', message: 'Status: In Progress → In Review', createdAt: now,
+  },
+];
+
+// Two completed sprints + one active per project for realistic velocity charts
+export const SEED_SPRINTS: Sprint[] = [
+  // WEB
+  {
+    id: 'spr_web_1', projectId: 'prj_web', number: 1, name: 'WEB Sprint 1',
+    goal: 'Ship hero refresh + analytics events',
+    state: 'completed',
+    startDate: '2026-04-15T00:00:00.000Z',
+    endDate: '2026-04-29T00:00:00.000Z',
+    completedAt: '2026-04-29T17:00:00.000Z',
+  },
+  {
+    id: 'spr_web_2', projectId: 'prj_web', number: 2, name: 'WEB Sprint 2',
+    goal: 'Customer stories & pricing audit',
+    state: 'completed',
+    startDate: '2026-05-01T00:00:00.000Z',
+    endDate: '2026-05-15T00:00:00.000Z',
+    completedAt: '2026-05-15T17:00:00.000Z',
+  },
+  {
+    id: 'spr_web_3', projectId: 'prj_web', number: 3, name: 'WEB Sprint 3',
+    goal: 'Q3 marketing site refresh',
+    state: 'active',
+    startDate: '2026-05-20T00:00:00.000Z',
+    endDate: '2026-06-03T00:00:00.000Z',
+  },
+
+  // MOB
+  {
+    id: 'spr_mob_1', projectId: 'prj_mobile', number: 1, name: 'MOB Sprint 1',
+    goal: 'Stabilize onboarding & fix crashes',
+    state: 'active',
+    startDate: '2026-05-22T00:00:00.000Z',
+    endDate: '2026-06-05T00:00:00.000Z',
+  },
+
+  // PLAT
+  {
+    id: 'spr_plat_1', projectId: 'prj_platform', number: 1, name: 'PLAT Sprint 1',
+    goal: 'CI migration kickoff',
+    state: 'completed',
+    startDate: '2026-05-05T00:00:00.000Z',
+    endDate: '2026-05-19T00:00:00.000Z',
+    completedAt: '2026-05-19T17:00:00.000Z',
+  },
+  {
+    id: 'spr_plat_2', projectId: 'prj_platform', number: 2, name: 'PLAT Sprint 2',
+    goal: 'Observability and webhook reliability',
+    state: 'active',
+    startDate: '2026-05-25T00:00:00.000Z',
+    endDate: '2026-06-08T00:00:00.000Z',
   },
 ];

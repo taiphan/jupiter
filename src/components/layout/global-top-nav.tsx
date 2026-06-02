@@ -9,9 +9,17 @@ import {
   HelpCircle,
   Settings as SettingsIcon,
   Plus,
+  ChevronDown,
   AppWindow,
   LogOut,
   CheckCircle2,
+  Star,
+  Clock,
+  ListChecks,
+  FolderKanban,
+  Filter as FilterIcon,
+  Users,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,15 +38,9 @@ import { ROLE_LABELS } from '@/lib/permissions';
 import { ThemeToggle } from './theme-toggle';
 import { CreateIssueDialog } from '@/components/issue/create-issue-dialog';
 import { IssueTypeIcon } from '@/components/issue/issue-icon';
+import { IssueDialog } from '@/components/issue/issue-dialog';
 import { UserAvatar } from '@/components/issue/user-avatar';
-import { initials } from '@/lib/utils';
-
-const NAV_ITEMS = [
-  { label: 'Your work', href: '/' },
-  { label: 'Projects', href: '/projects' },
-  { label: 'Filters', href: '/issues' },
-  { label: 'Teams', href: '/people' },
-];
+import { initials, timeAgo } from '@/lib/utils';
 
 export function GlobalTopNav() {
   const pathname = usePathname();
@@ -49,13 +51,11 @@ export function GlobalTopNav() {
   const issues = useIssuesStore((s) => s.issues);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [createdIssueId, setCreatedIssueId] = useState<string | null>(null);
-
+  const [openIssueId, setOpenIssueId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Close the search dropdown on outside click
   useEffect(() => {
     if (!searchOpen) return;
     const handler = (e: MouseEvent) => {
@@ -67,7 +67,6 @@ export function GlobalTopNav() {
     return () => document.removeEventListener('mousedown', handler);
   }, [searchOpen]);
 
-  // ⌘K / Ctrl+K to focus search
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -81,33 +80,41 @@ export function GlobalTopNav() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
+  if (!user) return null;
+
+  const myAssigned = issues
+    .filter((i) => i.assigneeId === user.id && i.status !== 'done')
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 5);
+
+  const recentlyUpdated = [...issues]
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 5);
 
   const trimmed = search.trim().toLowerCase();
   const matchingIssues = trimmed
-    ? issues
-        .filter((i) =>
-          i.summary.toLowerCase().includes(trimmed) ||
-          i.key.toLowerCase().includes(trimmed),
-        )
-        .slice(0, 6)
+    ? issues.filter((i) =>
+        i.summary.toLowerCase().includes(trimmed) ||
+        i.key.toLowerCase().includes(trimmed),
+      ).slice(0, 6)
     : [];
   const matchingProjects = trimmed
-    ? projects
-        .filter((p) =>
-          p.name.toLowerCase().includes(trimmed) ||
-          p.key.toLowerCase().includes(trimmed),
-        )
-        .slice(0, 4)
+    ? projects.filter((p) =>
+        p.name.toLowerCase().includes(trimmed) ||
+        p.key.toLowerCase().includes(trimmed),
+      ).slice(0, 4)
     : [];
 
-  if (!user) return null;
+  const isInProjectArea = pathname.startsWith('/projects');
+  const isInProjectsList = pathname === '/projects';
+  const isInIssues = pathname.startsWith('/issues');
+  const isInTeams = pathname.startsWith('/people');
+  const isInYourWork = pathname === '/';
 
   return (
     <>
-      <header className="flex h-12 shrink-0 items-center gap-2 border-b bg-[var(--topnav)] px-3 text-[var(--topnav-foreground)]">
-        {/* App switcher + workspace logo */}
+      <header className="flex h-12 shrink-0 items-center gap-1 border-b bg-[var(--topnav)] px-2 text-[var(--topnav-foreground)]">
+        {/* App switcher */}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -143,30 +150,113 @@ export function GlobalTopNav() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Workspace name */}
-        <Link href="/" className="flex items-center gap-2 px-2">
+        {/* Workspace mark */}
+        <Link href="/" className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted">
           <span className="flex h-7 w-7 items-center justify-center rounded bg-[#E31837] text-[10px] font-black text-white">
             FC
           </span>
           <span className="hidden text-sm font-semibold sm:inline">FE CREDIT</span>
         </Link>
 
-        {/* Primary nav */}
-        <nav className="ml-2 hidden items-center gap-1 md:flex">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={[
-                'rounded-md px-3 py-1.5 text-sm transition-colors',
-                isActive(item.href)
-                  ? 'bg-accent font-semibold text-accent-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              ].join(' ')}
+        {/* Product nav (dropdown menus, like real Jira) */}
+        <nav className="ml-1 hidden items-center md:flex">
+          <NavMenu label="Your work" active={isInYourWork}>
+            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Worked on
+            </DropdownMenuLabel>
+            {recentlyUpdated.length === 0 && (
+              <p className="px-2 py-3 text-xs text-muted-foreground">No recent activity</p>
+            )}
+            {recentlyUpdated.map((i) => (
+              <DropdownMenuItem
+                key={i.id}
+                onClick={() => setOpenIssueId(i.id)}
+                className="cursor-pointer"
+              >
+                <IssueTypeIcon type={i.type} />
+                <span className="font-mono text-xs text-muted-foreground">{i.key}</span>
+                <span className="flex-1 truncate text-xs">{i.summary}</span>
+                <span className="text-[10px] text-muted-foreground">{timeAgo(i.updatedAt)}</span>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Assigned to me
+            </DropdownMenuLabel>
+            {myAssigned.length === 0 ? (
+              <p className="px-2 py-3 text-xs text-muted-foreground">Nothing assigned</p>
+            ) : (
+              myAssigned.slice(0, 3).map((i) => (
+                <DropdownMenuItem key={i.id} onClick={() => setOpenIssueId(i.id)} className="cursor-pointer">
+                  <IssueTypeIcon type={i.type} />
+                  <span className="font-mono text-xs text-muted-foreground">{i.key}</span>
+                  <span className="flex-1 truncate text-xs">{i.summary}</span>
+                </DropdownMenuItem>
+              ))
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer" render={<Link href="/" />}>
+              <ArrowRight className="h-3.5 w-3.5" /> Go to Your work
+            </DropdownMenuItem>
+          </NavMenu>
+
+          <NavMenu label="Projects" active={isInProjectArea}>
+            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Recent projects
+            </DropdownMenuLabel>
+            {projects.slice(0, 6).map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                className="cursor-pointer"
+                render={<Link href={`/projects/${p.key}`} />}
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-[9px] font-bold text-primary">
+                  {p.key.slice(0, 3)}
+                </span>
+                <span className="flex-1 truncate">{p.name}</span>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer" render={<Link href="/projects" />}>
+              <FolderKanban className="h-3.5 w-3.5" /> View all projects
+            </DropdownMenuItem>
+          </NavMenu>
+
+          <NavMenu label="Filters" active={isInIssues}>
+            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Saved filters
+            </DropdownMenuLabel>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => router.push('/issues?assignee=me')}
             >
-              {item.label}
-            </Link>
-          ))}
+              <Star className="h-3.5 w-3.5 text-yellow-500" />
+              Assigned to me
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => router.push('/issues?status=in-progress')}
+            >
+              <Clock className="h-3.5 w-3.5" />
+              In progress
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => router.push('/issues')}
+            >
+              <ListChecks className="h-3.5 w-3.5" />
+              All issues
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer" render={<Link href="/issues" />}>
+              <FilterIcon className="h-3.5 w-3.5" /> Advanced search
+            </DropdownMenuItem>
+          </NavMenu>
+
+          <NavLink href="/people" active={isInTeams && !isInProjectsList}>
+            <Users className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+            Teams
+          </NavLink>
         </nav>
 
         {/* Create button */}
@@ -179,7 +269,7 @@ export function GlobalTopNav() {
           Create
         </Button>
 
-        {/* Spacer + global search */}
+        {/* Search */}
         <div ref={searchRef} className="relative ml-auto flex w-full max-w-md items-center">
           <Search
             className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
@@ -242,7 +332,7 @@ export function GlobalTopNav() {
                         <button
                           key={i.id}
                           onClick={() => {
-                            setCreatedIssueId(i.id);
+                            setOpenIssueId(i.id);
                             setSearch('');
                             setSearchOpen(false);
                           }}
@@ -262,14 +352,9 @@ export function GlobalTopNav() {
         </div>
 
         {/* Right cluster */}
-        <div className="ml-2 flex items-center gap-1">
+        <div className="ml-2 flex items-center gap-0.5">
           <ThemeToggle />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 cursor-pointer text-muted-foreground hover:text-foreground"
-            aria-label="Help"
-          >
+          <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer text-muted-foreground hover:text-foreground" aria-label="Help">
             <HelpCircle className="h-4 w-4" />
           </Button>
           <DropdownMenu>
@@ -289,7 +374,7 @@ export function GlobalTopNav() {
             <DropdownMenuContent align="end" className="w-72">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2 cursor-pointer" disabled>
+              <DropdownMenuItem className="gap-2 cursor-default" disabled>
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                 <span className="flex-1 text-xs">All caught up</span>
               </DropdownMenuItem>
@@ -305,7 +390,6 @@ export function GlobalTopNav() {
             <SettingsIcon className="h-4 w-4" />
           </Button>
 
-          {/* Profile menu */}
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -321,10 +405,13 @@ export function GlobalTopNav() {
             <DropdownMenuContent align="end" className="w-60">
               <DropdownMenuLabel>
                 <div className="flex items-center gap-3 py-1">
-                  <UserAvatar member={{
-                    id: user.id, name: user.name, username: user.username,
-                    email: user.email, avatarColor: user.avatarColor, title: user.title,
-                  }} size="md" />
+                  <UserAvatar
+                    member={{
+                      id: user.id, name: user.name, username: user.username,
+                      email: user.email, avatarColor: user.avatarColor, title: user.title,
+                    }}
+                    size="md"
+                  />
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{user.name}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
@@ -333,17 +420,12 @@ export function GlobalTopNav() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="cursor-pointer"
-                render={<Link href="/settings" />}
-              >
-                <SettingsIcon className="h-3.5 w-3.5" />
-                Settings
+              <DropdownMenuItem className="cursor-pointer" render={<Link href="/settings" />}>
+                <SettingsIcon className="h-3.5 w-3.5" /> Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
-                <LogOut className="h-3.5 w-3.5" />
-                Log out
+                <LogOut className="h-3.5 w-3.5" /> Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -353,16 +435,62 @@ export function GlobalTopNav() {
       <CreateIssueDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={(id) => setCreatedIssueId(id)}
+        onCreated={(id) => setOpenIssueId(id)}
       />
-      {/* When the user picks an issue from search, surface it. We embed the dialog at this level so it works app-wide. */}
-      <IssueDialogPortal openId={createdIssueId} onClose={() => setCreatedIssueId(null)} />
+      <IssueDialog issueId={openIssueId} onClose={() => setOpenIssueId(null)} />
     </>
   );
 }
 
-// Lazy-import the issue dialog to avoid a circular dep at module-eval time
-import { IssueDialog } from '@/components/issue/issue-dialog';
-function IssueDialogPortal({ openId, onClose }: { openId: string | null; onClose: () => void }) {
-  return <IssueDialog issueId={openId} onClose={onClose} />;
+function NavMenu({
+  label, children, active,
+}: {
+  label: string;
+  children: React.ReactNode;
+  active?: boolean;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            className={[
+              'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm transition-colors cursor-pointer',
+              active
+                ? 'bg-accent font-semibold text-accent-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            ].join(' ')}
+          >
+            {label}
+            <ChevronDown className="h-3 w-3 opacity-60" aria-hidden="true" />
+          </button>
+        }
+      />
+      <DropdownMenuContent align="start" className="w-72">
+        {children}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function NavLink({
+  href, children, active,
+}: {
+  href: string;
+  children: React.ReactNode;
+  active?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={[
+        'flex items-center rounded-md px-3 py-1.5 text-sm transition-colors',
+        active
+          ? 'bg-accent font-semibold text-accent-foreground'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+      ].join(' ')}
+    >
+      {children}
+    </Link>
+  );
 }

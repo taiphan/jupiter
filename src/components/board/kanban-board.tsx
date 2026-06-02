@@ -26,9 +26,11 @@ import { CreateIssueDialog } from '@/components/issue/create-issue-dialog';
 interface KanbanBoardProps {
   projectId: string;
   filters?: Omit<IssueFilters, 'status'>;
+  /** When set, only issues with these ids are shown (used to scope to a sprint). */
+  restrictIssueIds?: Set<string>;
 }
 
-export function KanbanBoard({ projectId, filters }: KanbanBoardProps) {
+export function KanbanBoard({ projectId, filters, restrictIssueIds }: KanbanBoardProps) {
   const issues = useIssuesStore((s) => s.issues);
   const moveIssue = useIssuesStore((s) => s.moveIssue);
   const user = useAuthStore((s) => s.user);
@@ -48,11 +50,14 @@ export function KanbanBoard({ projectId, filters }: KanbanBoardProps) {
 
   // Group issues by column, applying filters (status filter is forced to 'all')
   const columns = useMemo(() => {
-    const projectIssues = applyFilters(
+    let projectIssues = applyFilters(
       issues.filter((i) => i.projectId === projectId),
       { ...filters, status: 'all' },
       user?.id,
     );
+    if (restrictIssueIds) {
+      projectIssues = projectIssues.filter((i) => restrictIssueIds.has(i.id));
+    }
     const out: Record<IssueStatus, typeof projectIssues> = {
       backlog: [], todo: [], 'in-progress': [], 'in-review': [], done: [],
     };
@@ -61,7 +66,7 @@ export function KanbanBoard({ projectId, filters }: KanbanBoardProps) {
     }
     for (const s of BOARD_STATUSES) out[s].sort((a, b) => a.rank - b.rank);
     return out;
-  }, [issues, projectId, filters, user?.id]);
+  }, [issues, projectId, filters, user?.id, restrictIssueIds]);
 
   const activeIssue = activeId ? issues.find((i) => i.id === activeId) ?? null : null;
 
