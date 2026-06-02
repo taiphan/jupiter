@@ -20,6 +20,7 @@ import {
   Filter as FilterIcon,
   Users,
   ArrowRight,
+  ScrollText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +35,7 @@ import {
 import { useAuthStore } from '@/lib/auth-store';
 import { useProjectsStore } from '@/lib/projects-store';
 import { useIssuesStore } from '@/lib/issues-store';
-import { ROLE_LABELS } from '@/lib/permissions';
+import { ROLE_LABELS, hasPermission } from '@/lib/permissions';
 import { ThemeToggle } from './theme-toggle';
 import { CreateIssueDialog } from '@/components/issue/create-issue-dialog';
 import { IssueTypeIcon } from '@/components/issue/issue-icon';
@@ -423,6 +424,11 @@ export function GlobalTopNav() {
               <DropdownMenuItem className="cursor-pointer" render={<Link href="/settings" />}>
                 <SettingsIcon className="h-3.5 w-3.5" /> Settings
               </DropdownMenuItem>
+              {hasPermission(user.role, 'audit.view') && (
+                <DropdownMenuItem className="cursor-pointer" render={<Link href="/audit" />}>
+                  <ScrollText className="h-3.5 w-3.5" /> Audit log
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
                 <LogOut className="h-3.5 w-3.5" /> Log out

@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer,
   LineChart, Line, ReferenceLine, CartesianGrid, Legend,
+  AreaChart, Area,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,8 @@ import { useProjectsStore } from '@/lib/projects-store';
 import { useIssuesStore } from '@/lib/issues-store';
 import { useSprintsStore } from '@/lib/sprints-store';
 import { formatDate } from '@/lib/utils';
+import { STATUSES, STATUS_DEFAULTS } from '@/lib/types';
+import type { IssueStatus } from '@/lib/types';
 
 export function ReportsView({ projectKey }: { projectKey: string }) {
   const project = useProjectsStore((s) => s.getProjectByKey(projectKey));
@@ -217,7 +220,25 @@ export function ReportsView({ projectKey }: { projectKey: string }) {
         </CardContent>
       </Card>
 
-      {/* Cumulative flow lite — issue counts by status across statuses. Uses bars stacked by status. */}
+      {/* Cumulative Flow Diagram */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Cumulative flow</CardTitle>
+          <CardDescription className="text-xs">
+            How work has accumulated across statuses over the last 30 days. Approximated from each issue&apos;s
+            current state — useful for spotting WIP bloat.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {issues.length === 0 ? (
+            <Empty>No issues yet</Empty>
+          ) : (
+            <CfdChart issues={issues} />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Cumulative Flow legacy distribution */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Issue distribution</CardTitle>
@@ -245,6 +266,79 @@ export function ReportsView({ projectKey }: { projectKey: string }) {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+const CFD_STACK: IssueStatus[] = ['done', 'in-review', 'in-progress', 'todo', 'backlog'];
+
+function CfdChart({ issues }: { issues: { id: string; status: IssueStatus; createdAt: string; updatedAt: string }[] }) {
+  const data = useMemo(() => {
+    const days = 30;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const points: Array<{ label: string; date: string } & Record<IssueStatus, number>> = [];
+
+    for (let d = days; d >= 0; d--) {
+      const cur = new Date(today.getTime() - d * 24 * 60 * 60 * 1000);
+      const cutoff = cur.getTime() + 24 * 60 * 60 * 1000 - 1; // end of that day
+
+      // For each issue, count it under its current status only if it was created by `cur`,
+      // and treat its current status as effective from `updatedAt` onward; for earlier days,
+      // approximate it as `todo` (a reasonable default for demo data).
+      const counts: Record<IssueStatus, number> = {
+        backlog: 0, todo: 0, 'in-progress': 0, 'in-review': 0, done: 0,
+      };
+      for (const i of issues) {
+        const created = new Date(i.createdAt).getTime();
+        if (created > cutoff) continue;
+        const updated = new Date(i.updatedAt).getTime();
+        const effectiveStatus: IssueStatus =
+          updated <= cutoff ? i.status : 'todo';
+        counts[effectiveStatus] += 1;
+      }
+
+      points.push({
+        label: cur.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: cur.toISOString().slice(0, 10),
+        ...counts,
+      });
+    }
+
+    return points;
+  }, [issues]);
+
+  return (
+    <div className="h-72">
+      <ResponsiveContainer>
+        <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false}
+            interval={Math.ceil(data.length / 8)} />
+          <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+          <RTooltip
+            contentStyle={{
+              background: 'var(--popover)',
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              fontSize: 12,
+            }}
+          />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
+          {CFD_STACK.map((s) => (
+            <Area
+              key={s}
+              type="monotone"
+              dataKey={s}
+              name={STATUSES.includes(s) ? s.replace('-', ' ') : s}
+              stackId="cfd"
+              stroke={STATUS_DEFAULTS[s].color}
+              fill={STATUS_DEFAULTS[s].color}
+              fillOpacity={0.6}
+            />
+          ))}
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }

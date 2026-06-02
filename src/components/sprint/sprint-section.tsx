@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   ChevronDown,
   ChevronRight,
@@ -9,6 +12,7 @@ import {
   CheckCircle2,
   MoreHorizontal,
   Trash2,
+  GripVertical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,16 +34,20 @@ import { useIssuesStore } from '@/lib/issues-store';
 import { useAuthStore } from '@/lib/auth-store';
 import { hasPermission } from '@/lib/permissions';
 import { IssueRow } from '@/components/issue/issue-row';
-import { formatDate } from '@/lib/utils';
+import { formatDate, cn } from '@/lib/utils';
 
 interface SprintSectionProps {
+  /** Stable id used by the drop zone (sprint id, or 'backlog'). */
+  containerId: string;
   sprint?: Sprint; // undefined → backlog
   issues: Issue[];
   onCreate?: () => void;
   onOpenIssue: (id: string) => void;
 }
 
-export function SprintSection({ sprint, issues, onCreate, onOpenIssue }: SprintSectionProps) {
+export function SprintSection({
+  containerId, sprint, issues, onCreate, onOpenIssue,
+}: SprintSectionProps) {
   const [open, setOpen] = useState(true);
   const [showStart, setShowStart] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
@@ -55,6 +63,11 @@ export function SprintSection({ sprint, issues, onCreate, onOpenIssue }: SprintS
   const updateIssue = useIssuesStore((s) => s.updateIssue);
   const user = useAuthStore((s) => s.user);
 
+  const { setNodeRef, isOver } = useDroppable({
+    id: containerId,
+    data: { type: 'sprint-section', sprintId: sprint?.id, isBacklog: !sprint },
+  });
+
   const canManage = hasPermission(user?.role, 'projects.edit');
   const canEditIssues = hasPermission(user?.role, 'issues.edit');
 
@@ -67,14 +80,18 @@ export function SprintSection({ sprint, issues, onCreate, onOpenIssue }: SprintS
     ? projectSprints.filter((s) => s.id !== sprint.id && s.state !== 'completed')
     : [];
 
-  // Headline & state-specific elements
   const isBacklog = !sprint;
   const isPlanned = sprint?.state === 'planned';
   const isActive = sprint?.state === 'active';
   const isCompleted = sprint?.state === 'completed';
 
   return (
-    <div className="rounded-md border bg-card">
+    <div
+      className={cn(
+        'rounded-md border bg-card transition-colors',
+        isOver && 'ring-2 ring-primary/40 bg-accent/20',
+      )}
+    >
       <div className="flex items-center gap-2 border-b px-3 py-2">
         <button
           type="button"
@@ -107,7 +124,6 @@ export function SprintSection({ sprint, issues, onCreate, onOpenIssue }: SprintS
         </span>
 
         <div className="ml-auto flex items-center gap-1.5">
-          {/* Status pill counts */}
           {issues.length > 0 && !isBacklog && (
             <div className="hidden items-center gap-1 sm:flex">
               <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold">
@@ -183,85 +199,36 @@ export function SprintSection({ sprint, issues, onCreate, onOpenIssue }: SprintS
       </div>
 
       {open && (
-        <div className="space-y-1 p-2">
+        <div ref={setNodeRef} className="space-y-1 p-2 min-h-[60px]">
           {issues.length === 0 ? (
-            <div className="flex h-12 items-center justify-center rounded-md border border-dashed text-xs text-muted-foreground">
-              {isBacklog ? 'No backlog items' : 'No issues yet — drag from the backlog'}
+            <div
+              className={cn(
+                'flex h-12 items-center justify-center rounded-md border border-dashed text-xs text-muted-foreground',
+                isOver && 'border-primary text-primary',
+              )}
+            >
+              {isBacklog ? 'Drag issues here to remove from sprint' : 'Drag issues here'}
             </div>
           ) : (
-            issues.map((i) => (
-              <div key={i.id} className="group flex items-center gap-2">
-                <div className="flex-1">
-                  <IssueRow issue={i} onClick={(it) => onOpenIssue(it.id)} />
-                </div>
-                {canEditIssues && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      render={
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 shrink-0 cursor-pointer opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                          aria-label="Issue actions"
-                        >
-                          <MoreHorizontal className="h-3.5 w-3.5" />
-                        </Button>
-                      }
-                    />
-                    <DropdownMenuContent align="end" className="text-xs">
-                      {!isBacklog && (
-                        <>
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            onClick={() => removeIssueFromSprint(i.id)}
-                          >
-                            Move to backlog
-                          </DropdownMenuItem>
-                          {otherSprints.length > 0 && <DropdownMenuSeparator />}
-                          {otherSprints.map((s) => (
-                            <DropdownMenuItem
-                              key={s.id}
-                              className="cursor-pointer"
-                              onClick={() => addIssueToSprint(i.id, s.id)}
-                            >
-                              Move to {s.name}
-                            </DropdownMenuItem>
-                          ))}
-                        </>
-                      )}
-                      {isBacklog && otherSprints.length > 0 && projectSprints.filter((s) => s.state !== 'completed').length > 0 && (
-                        <>
-                          {projectSprints
-                            .filter((s) => s.state !== 'completed')
-                            .map((s) => (
-                              <DropdownMenuItem
-                                key={s.id}
-                                className="cursor-pointer"
-                                onClick={() => addIssueToSprint(i.id, s.id)}
-                              >
-                                Move to {s.name}
-                              </DropdownMenuItem>
-                            ))}
-                        </>
-                      )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() =>
-                          updateIssue(
-                            i.id,
-                            { status: i.status === 'done' ? 'todo' : 'done' },
-                            user!.id,
-                          )
-                        }
-                      >
-                        Toggle done
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            ))
+            <SortableContext items={issues.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+              {issues.map((i) => (
+                <SortableIssueRow
+                  key={i.id}
+                  issue={i}
+                  onOpen={onOpenIssue}
+                  canEdit={canEditIssues}
+                  isBacklog={isBacklog}
+                  otherSprints={otherSprints}
+                  allActiveSprints={projectSprints.filter((s) => s.state !== 'completed')}
+                  onMoveToBacklog={() => removeIssueFromSprint(i.id)}
+                  onMoveToSprint={(sprintId) => addIssueToSprint(i.id, sprintId)}
+                  onToggleDone={() =>
+                    user &&
+                    updateIssue(i.id, { status: i.status === 'done' ? 'todo' : 'done' }, user.id)
+                  }
+                />
+              ))}
+            </SortableContext>
           )}
 
           {onCreate && (
@@ -277,7 +244,6 @@ export function SprintSection({ sprint, issues, onCreate, onOpenIssue }: SprintS
         </div>
       )}
 
-      {/* Start sprint dialog */}
       {sprint && (
         <StartSprintDialog
           open={showStart}
@@ -291,7 +257,6 @@ export function SprintSection({ sprint, issues, onCreate, onOpenIssue }: SprintS
         />
       )}
 
-      {/* Complete sprint dialog */}
       {sprint && (
         <CompleteSprintDialog
           open={showComplete}
@@ -305,6 +270,106 @@ export function SprintSection({ sprint, issues, onCreate, onOpenIssue }: SprintS
             setShowComplete(false);
           }}
         />
+      )}
+    </div>
+  );
+}
+
+interface SortableIssueRowProps {
+  issue: Issue;
+  onOpen: (id: string) => void;
+  canEdit: boolean;
+  isBacklog: boolean;
+  otherSprints: Sprint[];
+  allActiveSprints: Sprint[];
+  onMoveToBacklog: () => void;
+  onMoveToSprint: (sprintId: string) => void;
+  onToggleDone: () => void;
+}
+
+function SortableIssueRow({
+  issue, onOpen, canEdit, isBacklog, otherSprints, allActiveSprints,
+  onMoveToBacklog, onMoveToSprint, onToggleDone,
+}: SortableIssueRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: issue.id,
+    data: { issue, type: 'issue' },
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn('group flex items-center gap-1', isDragging && 'opacity-40')}
+    >
+      <button
+        type="button"
+        className="cursor-grab text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <div className="flex-1 min-w-0">
+        <IssueRow issue={issue} onClick={(it) => onOpen(it.id)} />
+      </div>
+      {canEdit && (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0 cursor-pointer opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                aria-label="Issue actions"
+              >
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end" className="text-xs">
+            {!isBacklog && (
+              <>
+                <DropdownMenuItem className="cursor-pointer" onClick={onMoveToBacklog}>
+                  Move to backlog
+                </DropdownMenuItem>
+                {otherSprints.length > 0 && <DropdownMenuSeparator />}
+                {otherSprints.map((s) => (
+                  <DropdownMenuItem
+                    key={s.id}
+                    className="cursor-pointer"
+                    onClick={() => onMoveToSprint(s.id)}
+                  >
+                    Move to {s.name}
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
+            {isBacklog && allActiveSprints.length > 0 && (
+              <>
+                {allActiveSprints.map((s) => (
+                  <DropdownMenuItem
+                    key={s.id}
+                    className="cursor-pointer"
+                    onClick={() => onMoveToSprint(s.id)}
+                  >
+                    Move to {s.name}
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer" onClick={onToggleDone}>
+              Toggle done
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   );

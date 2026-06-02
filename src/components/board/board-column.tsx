@@ -5,26 +5,23 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Issue, IssueStatus } from '@/lib/types';
-import { STATUS_LABELS } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { BoardCard } from './board-card';
 
 interface BoardColumnProps {
   status: IssueStatus;
+  /** Resolved column label (may be project-overridden) */
+  label: string;
+  /** Resolved column color (hex) */
+  color: string;
   issues: Issue[];
   onOpenIssue: (id: string) => void;
   onCreate?: (status: IssueStatus) => void;
 }
 
-const STATUS_DOT: Record<IssueStatus, string> = {
-  backlog: 'bg-slate-400',
-  todo: 'bg-slate-500',
-  'in-progress': 'bg-blue-500',
-  'in-review': 'bg-amber-500',
-  done: 'bg-emerald-500',
-};
-
-export function BoardColumn({ status, issues, onOpenIssue, onCreate }: BoardColumnProps) {
+export function BoardColumn({
+  status, label, color, issues, onOpenIssue, onCreate,
+}: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `column-${status}`,
     data: { status, type: 'column' },
@@ -40,9 +37,13 @@ export function BoardColumn({ status, issues, onOpenIssue, onCreate }: BoardColu
     >
       <div className="flex items-center justify-between border-b border-border/40 px-3 py-2.5">
         <div className="flex items-center gap-2">
-          <span className={cn('h-2 w-2 rounded-full', STATUS_DOT[status])} aria-hidden="true" />
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: color }}
+            aria-hidden="true"
+          />
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {STATUS_LABELS[status]}
+            {label}
           </span>
           <span className="text-[11px] font-medium text-muted-foreground">{issues.length}</span>
         </div>
@@ -52,7 +53,7 @@ export function BoardColumn({ status, issues, onOpenIssue, onCreate }: BoardColu
             size="icon"
             className="h-6 w-6 cursor-pointer text-muted-foreground hover:text-foreground"
             onClick={() => onCreate(status)}
-            aria-label={`Add issue to ${STATUS_LABELS[status]}`}
+            aria-label={`Add issue to ${label}`}
           >
             <Plus className="h-3.5 w-3.5" />
           </Button>

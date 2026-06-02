@@ -63,8 +63,17 @@ export const STATUS_COLORS: Record<IssueStatus, string> = {
   done: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300',
 };
 
-/** Columns shown on the Kanban board (excludes Backlog) */
+/** Columns shown on the Kanban board (excludes Backlog) — used as the workflow default. */
 export const BOARD_STATUSES: IssueStatus[] = ['todo', 'in-progress', 'in-review', 'done'];
+
+/** Default status meta — used when no project-level override is set. */
+export const STATUS_DEFAULTS: Record<IssueStatus, { label: string; color: string; showOnBoard: boolean; order: number }> = {
+  backlog: { label: STATUS_LABELS.backlog, color: '#94A3B8', showOnBoard: false, order: 0 },
+  todo: { label: STATUS_LABELS.todo, color: '#64748B', showOnBoard: true, order: 1 },
+  'in-progress': { label: STATUS_LABELS['in-progress'], color: '#0C66E4', showOnBoard: true, order: 2 },
+  'in-review': { label: STATUS_LABELS['in-review'], color: '#F59E0B', showOnBoard: true, order: 3 },
+  done: { label: STATUS_LABELS.done, color: '#1F845A', showOnBoard: true, order: 4 },
+};
 
 // ─── Project ────────────────────────────────────────────────────────────────
 
@@ -86,6 +95,18 @@ export const projectSchema = z.object({
   createdAt: z.string(),
   /** Counter used to generate the next issue key (e.g. PROJ-7) */
   issueCounter: z.number().int().nonnegative(),
+  /** Per-project workflow overrides (label, color, board visibility, order) keyed by status */
+  statusOverrides: z
+    .partialRecord(
+      z.enum(STATUSES),
+      z.object({
+        label: z.string().optional(),
+        color: z.string().optional(),
+        showOnBoard: z.boolean().optional(),
+        order: z.number().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export type Project = z.infer<typeof projectSchema>;

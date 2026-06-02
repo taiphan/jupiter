@@ -14,6 +14,7 @@ export type Permission =
   | 'comments.delete'
   | 'people.view'
   | 'people.manage'
+  | 'audit.view'
   | 'settings.view'
   | 'settings.edit';
 
@@ -23,6 +24,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'issues.view', 'issues.create', 'issues.edit', 'issues.delete', 'issues.transition',
     'comments.create', 'comments.delete',
     'people.view', 'people.manage',
+    'audit.view',
     'settings.view', 'settings.edit',
   ],
   lead: [
@@ -30,6 +32,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'issues.view', 'issues.create', 'issues.edit', 'issues.delete', 'issues.transition',
     'comments.create', 'comments.delete',
     'people.view', 'people.manage',
+    'audit.view',
     'settings.view',
   ],
   member: [
@@ -43,6 +46,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'projects.view',
     'issues.view',
     'people.view',
+    'audit.view',
     'settings.view',
   ],
 };
@@ -70,6 +74,7 @@ const ROUTE_PERMISSIONS: Array<{ prefix: string; permission: Permission }> = [
   { prefix: '/projects', permission: 'projects.view' },
   { prefix: '/issues', permission: 'issues.view' },
   { prefix: '/people', permission: 'people.view' },
+  { prefix: '/audit', permission: 'audit.view' },
   { prefix: '/settings', permission: 'settings.view' },
 ];
 

@@ -58,10 +58,11 @@ export function ProjectShell({ projectKey, children }: ProjectShellProps) {
       : pathname.startsWith(`${baseUrl}/backlog`) ? 'backlog'
       : pathname.startsWith(`${baseUrl}/timeline`) ? 'timeline'
       : pathname.startsWith(`${baseUrl}/reports`) ? 'reports'
+      : pathname.startsWith(`${baseUrl}/board-config`) ? 'board-config'
       : pathname.startsWith(`${baseUrl}/settings`) ? 'settings'
       : '';
 
-  const showTabs = currentTabSub !== 'settings';
+  const showTabs = currentTabSub !== 'settings' && currentTabSub !== 'board-config';
 
   return (
     <>
@@ -84,6 +85,7 @@ export function ProjectShell({ projectKey, children }: ProjectShellProps) {
                 <h1 className="truncate text-xl font-semibold leading-tight tracking-tight">
                   {currentTabSub === 'settings'
                     ? 'Project settings'
+                    : currentTabSub === 'board-config' ? 'Board configuration'
                     : currentTabSub === 'summary' ? 'Summary'
                     : currentTabSub === 'backlog' ? 'Backlog'
                     : currentTabSub === 'timeline' ? 'Timeline'
@@ -135,13 +137,15 @@ export function ProjectShell({ projectKey, children }: ProjectShellProps) {
                   />
                   <DropdownMenuContent align="end">
                     {canEdit && (
-                      <DropdownMenuItem className="cursor-pointer" render={<Link href={`${baseUrl}/settings`} />}>
-                        Project settings
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuItem className="cursor-pointer" render={<Link href={`${baseUrl}/board-config`} />}>
+                          Configure board
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="cursor-pointer" render={<Link href={`${baseUrl}/settings`} />}>
+                          Project settings
+                        </DropdownMenuItem>
+                      </>
                     )}
-                    <DropdownMenuItem className="cursor-pointer" disabled>
-                      Configure board
-                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

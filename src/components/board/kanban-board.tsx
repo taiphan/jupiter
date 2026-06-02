@@ -14,9 +14,10 @@ import {
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates, arrayMove } from '@dnd-kit/sortable';
 import { useIssuesStore, applyFilters, type IssueFilters } from '@/lib/issues-store';
+import { useProjectsStore } from '@/lib/projects-store';
 import { useAuthStore } from '@/lib/auth-store';
 import type { IssueStatus } from '@/lib/types';
-import { BOARD_STATUSES } from '@/lib/types';
+import { getBoardColumns } from '@/lib/workflow';
 import { hasPermission } from '@/lib/permissions';
 import { BoardColumn } from './board-column';
 import { BoardCard } from './board-card';
@@ -33,7 +34,11 @@ interface KanbanBoardProps {
 export function KanbanBoard({ projectId, filters, restrictIssueIds }: KanbanBoardProps) {
   const issues = useIssuesStore((s) => s.issues);
   const moveIssue = useIssuesStore((s) => s.moveIssue);
+  const project = useProjectsStore((s) => s.getProject(projectId));
   const user = useAuthStore((s) => s.user);
+
+  const boardColumns = useMemo(() => getBoardColumns(project), [project]);
+  const boardStatuses = useMemo(() => boardColumns.map((c) => c.status), [boardColumns]);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [openIssueId, setOpenIssueId] = useState<string | null>(null);
@@ -62,11 +67,11 @@ export function KanbanBoard({ projectId, filters, restrictIssueIds }: KanbanBoar
       backlog: [], todo: [], 'in-progress': [], 'in-review': [], done: [],
     };
     for (const i of projectIssues) {
-      if (BOARD_STATUSES.includes(i.status)) out[i.status].push(i);
+      if (boardStatuses.includes(i.status)) out[i.status].push(i);
     }
-    for (const s of BOARD_STATUSES) out[s].sort((a, b) => a.rank - b.rank);
+    for (const s of boardStatuses) out[s].sort((a, b) => a.rank - b.rank);
     return out;
-  }, [issues, projectId, filters, user?.id, restrictIssueIds]);
+  }, [issues, projectId, filters, user?.id, restrictIssueIds, boardStatuses]);
 
   const activeIssue = activeId ? issues.find((i) => i.id === activeId) ?? null : null;
 
@@ -128,10 +133,12 @@ export function KanbanBoard({ projectId, filters, restrictIssueIds }: KanbanBoar
         onDragCancel={() => setActiveId(null)}
       >
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {BOARD_STATUSES.map((status) => (
+          {boardColumns.map(({ status, label, color }) => (
             <BoardColumn
               key={status}
               status={status}
+              label={label}
+              color={color}
               issues={columns[status]}
               onOpenIssue={setOpenIssueId}
               onCreate={canCreate ? openCreate : undefined}

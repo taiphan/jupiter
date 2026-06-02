@@ -68,7 +68,10 @@ export function ProjectSidebar({ project }: ProjectSidebarProps) {
   ];
 
   const settings: NavItem[] = canEdit
-    ? [{ label: 'Project settings', href: `${baseUrl}/settings`, icon: SettingsIcon }]
+    ? [
+        { label: 'Board configuration', href: `${baseUrl}/board-config`, icon: Layers },
+        { label: 'Project settings', href: `${baseUrl}/settings`, icon: SettingsIcon },
+      ]
     : [];
 
   const isActive = (href: string) => {
