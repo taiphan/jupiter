@@ -59,10 +59,14 @@ export function ProjectShell({ projectKey, children }: ProjectShellProps) {
       : pathname.startsWith(`${baseUrl}/timeline`) ? 'timeline'
       : pathname.startsWith(`${baseUrl}/reports`) ? 'reports'
       : pathname.startsWith(`${baseUrl}/board-config`) ? 'board-config'
+      : pathname.startsWith(`${baseUrl}/fields`) ? 'fields'
       : pathname.startsWith(`${baseUrl}/settings`) ? 'settings'
       : '';
 
-  const showTabs = currentTabSub !== 'settings' && currentTabSub !== 'board-config';
+  const showTabs =
+    currentTabSub !== 'settings' &&
+    currentTabSub !== 'board-config' &&
+    currentTabSub !== 'fields';
 
   return (
     <>
@@ -86,6 +90,7 @@ export function ProjectShell({ projectKey, children }: ProjectShellProps) {
                   {currentTabSub === 'settings'
                     ? 'Project settings'
                     : currentTabSub === 'board-config' ? 'Board configuration'
+                    : currentTabSub === 'fields' ? 'Custom fields'
                     : currentTabSub === 'summary' ? 'Summary'
                     : currentTabSub === 'backlog' ? 'Backlog'
                     : currentTabSub === 'timeline' ? 'Timeline'

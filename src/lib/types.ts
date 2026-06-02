@@ -111,6 +111,51 @@ export const projectSchema = z.object({
 
 export type Project = z.infer<typeof projectSchema>;
 
+// ─── Custom fields ──────────────────────────────────────────────────────────
+
+export const CUSTOM_FIELD_TYPES = ['text', 'number', 'select', 'date', 'checkbox', 'url'] as const;
+export type CustomFieldType = (typeof CUSTOM_FIELD_TYPES)[number];
+
+export const CUSTOM_FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
+  text: 'Text',
+  number: 'Number',
+  select: 'Dropdown',
+  date: 'Date',
+  checkbox: 'Checkbox',
+  url: 'URL',
+};
+
+export interface CustomFieldDef {
+  id: string;
+  projectId: string;
+  name: string;
+  type: CustomFieldType;
+  /** Options for select-type fields */
+  options?: string[];
+  required?: boolean;
+  /** Display order within the issue panel */
+  order: number;
+}
+
+/** Stored value can be string | number | boolean depending on field type. */
+export type CustomFieldValue = string | number | boolean | undefined;
+
+// ─── Attachments ────────────────────────────────────────────────────────────
+
+export interface Attachment {
+  id: string;
+  issueId: string;
+  name: string;
+  /** MIME type */
+  mime: string;
+  /** Size in bytes */
+  size: number;
+  /** Data URL (base64). Kept small via an upload size cap. */
+  dataUrl: string;
+  uploadedById: string;
+  createdAt: string;
+}
+
 // ─── Issue ──────────────────────────────────────────────────────────────────
 
 export const issueSchema = z.object({
@@ -131,6 +176,8 @@ export const issueSchema = z.object({
   /** Sprint this issue is committed to */
   sprintId: z.string().optional(),
   storyPoints: z.number().int().nonnegative().optional(),
+  /** Values for project-defined custom fields, keyed by field id */
+  customFields: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   /** Position within its column for stable ordering on the board */
   rank: z.number(),
   createdAt: z.string(),

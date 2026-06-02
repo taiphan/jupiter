@@ -4,6 +4,7 @@ import type {
   Issue,
   Comment,
   ActivityEntry,
+  Attachment,
   IssueStatus,
   IssueType,
   Priority,
@@ -15,6 +16,8 @@ import { uid } from './utils';
 import { useProjectsStore } from './projects-store';
 
 const RANK_STEP = 1000;
+/** Max attachment size kept in localStorage (1.5 MB raw → ~2 MB base64). */
+export const MAX_ATTACHMENT_BYTES = 1.5 * 1024 * 1024;
 
 export interface IssueFilters {
   projectId?: string;
@@ -30,6 +33,7 @@ interface IssuesState {
   issues: Issue[];
   comments: Comment[];
   activity: ActivityEntry[];
+  attachments: Attachment[];
 
   createIssue: (input: {
     projectId: string;
@@ -59,6 +63,18 @@ interface IssuesState {
 
   addComment: (input: { issueId: string; authorId: string; body: string }) => Comment;
   deleteComment: (id: string) => void;
+
+  /** Add an attachment. Returns null if it exceeds the size cap. */
+  addAttachment: (input: {
+    issueId: string;
+    name: string;
+    mime: string;
+    size: number;
+    dataUrl: string;
+    uploadedById: string;
+  }) => Attachment | null;
+  deleteAttachment: (id: string) => void;
+  getAttachmentsForIssue: (issueId: string) => Attachment[];
 
   getIssue: (id: string) => Issue | undefined;
   getIssueByKey: (key: string) => Issue | undefined;
@@ -101,6 +117,7 @@ export const useIssuesStore = create<IssuesState>()(
       issues: SEED_ISSUES,
       comments: SEED_COMMENTS,
       activity: SEED_ACTIVITY,
+      attachments: [],
 
       createIssue: ({
         projectId, type, summary, description,
@@ -177,6 +194,9 @@ export const useIssuesStore = create<IssuesState>()(
           if (patch.labels && JSON.stringify(patch.labels) !== JSON.stringify(before.labels)) {
             activity = pushActivity(activity, id, actorId, 'label', 'Updated labels');
           }
+          if (patch.customFields && JSON.stringify(patch.customFields) !== JSON.stringify(before.customFields)) {
+            activity = pushActivity(activity, id, actorId, 'label', 'Updated fields');
+          }
 
           return {
             issues: s.issues.map((i) => (i.id === id ? after : i)),
@@ -189,6 +209,7 @@ export const useIssuesStore = create<IssuesState>()(
           issues: s.issues.filter((i) => i.id !== id),
           comments: s.comments.filter((c) => c.issueId !== id),
           activity: s.activity.filter((a) => a.issueId !== id),
+          attachments: s.attachments.filter((a) => a.issueId !== id),
         })),
 
       moveIssue: ({ id, toStatus, toIndex, actorId }) =>
@@ -248,6 +269,30 @@ export const useIssuesStore = create<IssuesState>()(
       deleteComment: (id) =>
         set((s) => ({ comments: s.comments.filter((c) => c.id !== id) })),
 
+      addAttachment: ({ issueId, name, mime, size, dataUrl, uploadedById }) => {
+        if (size > MAX_ATTACHMENT_BYTES) return null;
+        const attachment: Attachment = {
+          id: uid('att'),
+          issueId,
+          name,
+          mime,
+          size,
+          dataUrl,
+          uploadedById,
+          createdAt: nowIso(),
+        };
+        set((s) => ({ attachments: [...s.attachments, attachment] }));
+        return attachment;
+      },
+
+      deleteAttachment: (id) =>
+        set((s) => ({ attachments: s.attachments.filter((a) => a.id !== id) })),
+
+      getAttachmentsForIssue: (issueId) =>
+        get()
+          .attachments.filter((a) => a.issueId === issueId)
+          .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+
       getIssue: (id) => get().issues.find((i) => i.id === id),
       getIssueByKey: (key) =>
         get().issues.find((i) => i.key.toUpperCase() === key.toUpperCase()),
@@ -270,7 +315,7 @@ export const useIssuesStore = create<IssuesState>()(
           .activity.filter((a) => a.issueId === issueId)
           .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
 
-      reseed: () => set({ issues: SEED_ISSUES, comments: SEED_COMMENTS, activity: SEED_ACTIVITY }),
+      reseed: () => set({ issues: SEED_ISSUES, comments: SEED_COMMENTS, activity: SEED_ACTIVITY, attachments: [] }),
     }),
     { name: 'jira-clone-issues' },
   ),

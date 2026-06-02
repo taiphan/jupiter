@@ -125,6 +125,9 @@ export default function SettingsPage() {
                     [
                       'jira-clone-projects',
                       'jira-clone-issues',
+                      'jira-clone-sprints',
+                      'jira-clone-custom-fields',
+                      'jira-clone-notifications',
                       'jira-clone-auth',
                       'jira-clone-theme',
                     ].forEach((k) => localStorage.removeItem(k));

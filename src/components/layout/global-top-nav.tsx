@@ -41,6 +41,8 @@ import { CreateIssueDialog } from '@/components/issue/create-issue-dialog';
 import { IssueTypeIcon } from '@/components/issue/issue-icon';
 import { IssueDialog } from '@/components/issue/issue-dialog';
 import { UserAvatar } from '@/components/issue/user-avatar';
+import { useNotifications } from '@/lib/use-notifications';
+import { useNotificationsStore } from '@/lib/notifications-store';
 import { initials, timeAgo } from '@/lib/utils';
 
 export function GlobalTopNav() {
@@ -50,6 +52,10 @@ export function GlobalTopNav() {
   const logout = useAuthStore((s) => s.logout);
   const projects = useProjectsStore((s) => s.projects);
   const issues = useIssuesStore((s) => s.issues);
+
+  const { notifications, unreadCount } = useNotifications();
+  const markAllRead = useNotificationsStore((s) => s.markAllRead);
+  const markRead = useNotificationsStore((s) => s.markRead);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [openIssueId, setOpenIssueId] = useState<string | null>(null);
@@ -368,17 +374,61 @@ export function GlobalTopNav() {
                   aria-label="Notifications"
                 >
                   <Bell className="h-4 w-4" />
-                  <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-destructive" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
                 </Button>
               }
             />
-            <DropdownMenuContent align="end" className="w-72">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-80">
+              <div className="flex items-center justify-between px-2 py-1.5">
+                <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    className="text-[11px] text-primary hover:underline cursor-pointer"
+                    onClick={() => markAllRead(user.id, notifications.map((n) => n.activity.id))}
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2 cursor-default" disabled>
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                <span className="flex-1 text-xs">All caught up</span>
-              </DropdownMenuItem>
+              {notifications.length === 0 ? (
+                <DropdownMenuItem className="gap-2 cursor-default" disabled>
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  <span className="flex-1 text-xs">You&apos;re all caught up</span>
+                </DropdownMenuItem>
+              ) : (
+                <div className="max-h-96 overflow-y-auto">
+                  {notifications.map((n) => (
+                    <DropdownMenuItem
+                      key={n.id}
+                      className="cursor-pointer items-start gap-2 py-2"
+                      onClick={() => {
+                        markRead(user.id, n.activity.id);
+                        setOpenIssueId(n.issue.id);
+                      }}
+                    >
+                      {!n.read && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
+                      {n.read && <span className="mt-1.5 h-1.5 w-1.5 shrink-0" />}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs leading-snug">
+                          <span className="text-muted-foreground">{n.activity.message}</span>
+                        </p>
+                        <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <IssueTypeIcon type={n.issue.type} />
+                          <span className="font-mono">{n.issue.key}</span>
+                          <span className="truncate">{n.issue.summary}</span>
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{timeAgo(n.activity.createdAt)}</p>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           <Button

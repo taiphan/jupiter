@@ -70,6 +70,7 @@ export function ProjectSidebar({ project }: ProjectSidebarProps) {
   const settings: NavItem[] = canEdit
     ? [
         { label: 'Board configuration', href: `${baseUrl}/board-config`, icon: Layers },
+        { label: 'Custom fields', href: `${baseUrl}/fields`, icon: ListTodo },
         { label: 'Project settings', href: `${baseUrl}/settings`, icon: SettingsIcon },
       ]
     : [];

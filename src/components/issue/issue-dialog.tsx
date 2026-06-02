@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Trash2, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Trash2, X, Paperclip, Upload, FileText, Download } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,8 +20,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { useIssuesStore } from '@/lib/issues-store';
+import { useIssuesStore, MAX_ATTACHMENT_BYTES } from '@/lib/issues-store';
 import { useProjectsStore } from '@/lib/projects-store';
+import { useCustomFieldsStore } from '@/lib/custom-fields-store';
 import { useAuthStore } from '@/lib/auth-store';
 import { hasPermission } from '@/lib/permissions';
 import {
@@ -29,8 +30,8 @@ import {
   STATUSES, STATUS_LABELS,
   PRIORITIES, PRIORITY_LABELS,
 } from '@/lib/types';
-import type { IssueStatus, IssueType, Priority } from '@/lib/types';
-import { timeAgo } from '@/lib/utils';
+import type { Issue, IssueStatus, IssueType, Priority, CustomFieldValue } from '@/lib/types';
+import { timeAgo, formatBytes } from '@/lib/utils';
 import { IssueTypeIcon } from './issue-icon';
 import { PriorityIcon } from './priority-icon';
 import { UserAvatar } from './user-avatar';
@@ -227,6 +228,9 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
               </div>
             )}
           </div>
+
+          {/* Attachments */}
+          <AttachmentsSection issueId={issue.id} canEdit={canEdit} uploadedById={user.id} />
 
           {/* Comments */}
           <div className="space-y-3">
@@ -470,6 +474,8 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
             </div>
           </FieldRow>
 
+          <CustomFieldsEditor issue={issue} canEdit={canEdit} actorId={user.id} />
+
           <Separator />
 
           <div className="space-y-1 text-[11px] text-muted-foreground">
@@ -531,5 +537,206 @@ function SprintSelect({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+// ─── Custom fields ──────────────────────────────────────────────────────────
+
+function CustomFieldsEditor({
+  issue, canEdit, actorId,
+}: {
+  issue: Issue;
+  canEdit: boolean;
+  actorId: string;
+}) {
+  const fields = useCustomFieldsStore((s) => s.getFieldsForProject(issue.projectId));
+  const updateIssue = useIssuesStore((s) => s.updateIssue);
+
+  if (fields.length === 0) return null;
+
+  const setValue = (fieldId: string, value: CustomFieldValue) => {
+    const next = { ...(issue.customFields ?? {}) };
+    if (value === undefined || value === '') delete next[fieldId];
+    else next[fieldId] = value;
+    updateIssue(issue.id, { customFields: next }, actorId);
+  };
+
+  return (
+    <>
+      <Separator />
+      <div className="space-y-3">
+        {fields.map((f) => {
+          const value = issue.customFields?.[f.id];
+          return (
+            <FieldRow key={f.id} label={f.name}>
+              {!canEdit ? (
+                <span className="text-xs">
+                  {value === undefined || value === ''
+                    ? '—'
+                    : typeof value === 'boolean'
+                      ? (value ? 'Yes' : 'No')
+                      : String(value)}
+                </span>
+              ) : f.type === 'select' ? (
+                <Select
+                  value={(value as string) ?? '__none'}
+                  onValueChange={(v) => setValue(f.id, !v || v === '__none' ? undefined : v)}
+                >
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">—</SelectItem>
+                    {(f.options ?? []).map((o) => (
+                      <SelectItem key={o} value={o}>{o}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : f.type === 'checkbox' ? (
+                <label className="flex cursor-pointer items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(value)}
+                    onChange={(e) => setValue(f.id, e.target.checked)}
+                  />
+                  {value ? 'Yes' : 'No'}
+                </label>
+              ) : (
+                <Input
+                  type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : f.type === 'url' ? 'url' : 'text'}
+                  value={value === undefined ? '' : String(value)}
+                  onChange={(e) =>
+                    setValue(f.id, f.type === 'number'
+                      ? (e.target.value === '' ? undefined : Number(e.target.value))
+                      : e.target.value)
+                  }
+                  className="h-8 text-xs"
+                  placeholder="—"
+                />
+              )}
+            </FieldRow>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// ─── Attachments ────────────────────────────────────────────────────────────
+
+function AttachmentsSection({
+  issueId, canEdit, uploadedById,
+}: {
+  issueId: string;
+  canEdit: boolean;
+  uploadedById: string;
+}) {
+  const attachments = useIssuesStore((s) => s.getAttachmentsForIssue(issueId));
+  const addAttachment = useIssuesStore((s) => s.addAttachment);
+  const deleteAttachment = useIssuesStore((s) => s.deleteAttachment);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState('');
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return;
+    setError('');
+    Array.from(files).forEach((file) => {
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        setError(`"${file.name}" is too large (max ${formatBytes(MAX_ATTACHMENT_BYTES)})`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = addAttachment({
+          issueId,
+          name: file.name,
+          mime: file.type || 'application/octet-stream',
+          size: file.size,
+          dataUrl: String(reader.result),
+          uploadedById,
+        });
+        if (!result) setError(`"${file.name}" exceeds the size cap`);
+      };
+      reader.readAsDataURL(file);
+    });
+    if (inputRef.current) inputRef.current.value = '';
+  };
+
+  const isImage = (mime: string) => mime.startsWith('image/');
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <Paperclip className="h-3.5 w-3.5" />
+          Attachments {attachments.length > 0 && `(${attachments.length})`}
+        </h3>
+        {canEdit && (
+          <>
+            <input
+              ref={inputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => handleFiles(e.target.files)}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="cursor-pointer gap-1.5"
+              onClick={() => inputRef.current?.click()}
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Add
+            </Button>
+          </>
+        )}
+      </div>
+
+      {error && (
+        <p className="rounded-md bg-destructive/10 px-2 py-1 text-[11px] text-destructive">{error}</p>
+      )}
+
+      {attachments.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic">No attachments</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {attachments.map((att) => (
+            <div key={att.id} className="group relative overflow-hidden rounded-md border">
+              {isImage(att.mime) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={att.dataUrl} alt={att.name} className="h-24 w-full object-cover" />
+              ) : (
+                <div className="flex h-24 w-full items-center justify-center bg-muted">
+                  <FileText className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+                </div>
+              )}
+              <div className="p-2">
+                <p className="truncate text-[11px] font-medium" title={att.name}>{att.name}</p>
+                <p className="text-[10px] text-muted-foreground">{formatBytes(att.size)}</p>
+              </div>
+              <div className="absolute right-1 top-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <a
+                  href={att.dataUrl}
+                  download={att.name}
+                  className="rounded bg-background/90 p-1 text-foreground shadow-sm hover:bg-background"
+                  aria-label={`Download ${att.name}`}
+                >
+                  <Download className="h-3 w-3" />
+                </a>
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => deleteAttachment(att.id)}
+                    className="rounded bg-background/90 p-1 text-destructive shadow-sm hover:bg-background cursor-pointer"
+                    aria-label={`Delete ${att.name}`}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
