@@ -38,20 +38,20 @@ export function LoginForm() {
           <span className="flex h-7 w-7 items-center justify-center rounded bg-primary text-[10px] font-black text-primary-foreground">
             J
           </span>
-          <span className="text-sm font-semibold">Jira</span>
+          <span className="text-sm font-semibold">Jupiter</span>
         </div>
       </header>
 
       <main className="flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-12">
         <div className="w-full max-w-[400px] rounded-lg border bg-card p-8 ds-shadow-raised">
-          {/* FE CREDIT mark */}
+          {/* VPBank mark */}
           <div className="mb-6 flex flex-col items-center text-center">
-            <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-md bg-[#E31837] text-sm font-black text-white">
-              FC
+            <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-md bg-[#00A651] text-sm font-black text-white">
+              VP
             </span>
-            <h1 className="text-xl font-semibold">Log in to FE CREDIT</h1>
+            <h1 className="text-xl font-semibold">Log in to VPBank</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Welcome back. Sign in to continue to Jira.
+              Welcome back. Sign in to continue to Jupiter.
             </p>
           </div>
 
@@ -150,7 +150,7 @@ export function LoginForm() {
       </main>
 
       <footer className="border-t bg-card px-4 py-3 text-center text-[11px] text-muted-foreground">
-        © 2026 FE CREDIT · Atlassian-style project tracker
+        © 2026 VPBank · Atlassian-style project tracker
       </footer>
     </div>
   );

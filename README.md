@@ -1,4 +1,4 @@
-<h1 align="center">Jira Clone</h1>
+<h1 align="center">Jupiter</h1>
 
 <p align="center">
   <strong>A lightweight project tracker inspired by Jira.</strong>

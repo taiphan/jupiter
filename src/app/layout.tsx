@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'FE CREDIT — Jira',
-  description: 'Plan, track, and ship work across the FE CREDIT engineering teams.',
+  title: 'VPBank — Jupiter',
+  description: 'Plan, track, and ship work across the VPBank engineering teams.',
 };
 
 export default function RootLayout({

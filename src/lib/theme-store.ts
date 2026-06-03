@@ -14,6 +14,6 @@ export const useThemeStore = create<ThemeState>()(
       mode: 'light',
       setMode: (mode) => set({ mode }),
     }),
-    { name: 'jira-clone-theme' },
+    { name: 'jupiter-theme' },
   ),
 );

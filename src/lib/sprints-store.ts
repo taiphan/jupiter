@@ -156,6 +156,6 @@ export const useSprintsStore = create<SprintsState>()(
 
       reseed: () => set({ sprints: SEED_SPRINTS, burndownSnapshots: {} }),
     }),
-    { name: 'jira-clone-sprints' },
+    { name: 'jupiter-sprints' },
   ),
 );

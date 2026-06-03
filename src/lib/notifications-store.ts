@@ -35,6 +35,6 @@ export const useNotificationsStore = create<NotificationsState>()(
       isRead: (userId, activityId) =>
         (get().readByUser[userId] ?? []).includes(activityId),
     }),
-    { name: 'jira-clone-notifications' },
+    { name: 'jupiter-notifications' },
   ),
 );

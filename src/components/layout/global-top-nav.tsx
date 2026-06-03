@@ -141,7 +141,7 @@ export function GlobalTopNav() {
             </DropdownMenuLabel>
             <DropdownMenuItem className="gap-2 cursor-pointer" disabled>
               <span className="flex h-6 w-6 items-center justify-center rounded bg-primary text-[10px] font-bold text-primary-foreground">J</span>
-              Jira
+              Jupiter
               <Badge variant="secondary" className="ml-auto text-[9px]">Active</Badge>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2 cursor-pointer" disabled>
@@ -159,10 +159,10 @@ export function GlobalTopNav() {
 
         {/* Workspace mark */}
         <Link href="/" className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted">
-          <span className="flex h-7 w-7 items-center justify-center rounded bg-[#E31837] text-[10px] font-black text-white">
-            FC
+          <span className="flex h-7 w-7 items-center justify-center rounded bg-[#00A651] text-[10px] font-black text-white">
+            VP
           </span>
-          <span className="hidden text-sm font-semibold sm:inline">FE CREDIT</span>
+          <span className="hidden text-sm font-semibold sm:inline">VPBank</span>
         </Link>
 
         {/* Product nav (dropdown menus, like real Jira) */}

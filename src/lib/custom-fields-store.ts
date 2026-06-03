@@ -91,6 +91,6 @@ export const useCustomFieldsStore = create<CustomFieldsState>()(
           .fields.filter((f) => f.projectId === projectId)
           .sort((a, b) => a.order - b.order),
     }),
-    { name: 'jira-clone-custom-fields' },
+    { name: 'jupiter-custom-fields' },
   ),
 );

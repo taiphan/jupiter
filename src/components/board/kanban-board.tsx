@@ -27,11 +27,20 @@ import { CreateIssueDialog } from '@/components/issue/create-issue-dialog';
 interface KanbanBoardProps {
   projectId: string;
   filters?: Omit<IssueFilters, 'status'>;
-  /** When set, only issues with these ids are shown (used to scope to a sprint). */
+  /** When set, only issues with these ids are shown. */
   restrictIssueIds?: Set<string>;
+  /** When set, scopes the board to issues belonging to this sprint. */
+  sprintId?: string;
+  /**
+   * When true, suppresses drag transitions and "create" affordances so the
+   * board renders read-only (e.g. for a completed sprint, Req 1.7).
+   */
+  readOnly?: boolean;
 }
 
-export function KanbanBoard({ projectId, filters, restrictIssueIds }: KanbanBoardProps) {
+export function KanbanBoard({
+  projectId, filters, restrictIssueIds, sprintId, readOnly = false,
+}: KanbanBoardProps) {
   const issues = useIssuesStore((s) => s.issues);
   const moveIssue = useIssuesStore((s) => s.moveIssue);
   const project = useProjectsStore((s) => s.getProject(projectId));
@@ -50,8 +59,8 @@ export function KanbanBoard({ projectId, filters, restrictIssueIds }: KanbanBoar
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const canTransition = hasPermission(user?.role, 'issues.transition');
-  const canCreate = hasPermission(user?.role, 'issues.create');
+  const canTransition = !readOnly && hasPermission(user?.role, 'issues.transition');
+  const canCreate = !readOnly && hasPermission(user?.role, 'issues.create');
 
   // Group issues by column, applying filters (status filter is forced to 'all')
   const columns = useMemo(() => {
@@ -60,6 +69,9 @@ export function KanbanBoard({ projectId, filters, restrictIssueIds }: KanbanBoar
       { ...filters, status: 'all' },
       user?.id,
     );
+    if (sprintId !== undefined) {
+      projectIssues = projectIssues.filter((i) => i.sprintId === sprintId);
+    }
     if (restrictIssueIds) {
       projectIssues = projectIssues.filter((i) => restrictIssueIds.has(i.id));
     }
@@ -71,7 +83,7 @@ export function KanbanBoard({ projectId, filters, restrictIssueIds }: KanbanBoar
     }
     for (const s of boardStatuses) out[s].sort((a, b) => a.rank - b.rank);
     return out;
-  }, [issues, projectId, filters, user?.id, restrictIssueIds, boardStatuses]);
+  }, [issues, projectId, filters, user?.id, restrictIssueIds, sprintId, boardStatuses]);
 
   const activeIssue = activeId ? issues.find((i) => i.id === activeId) ?? null : null;
 
@@ -157,7 +169,13 @@ export function KanbanBoard({ projectId, filters, restrictIssueIds }: KanbanBoar
         onClose={() => setCreateOpen(false)}
         defaultProjectId={projectId}
         defaultStatus={createStatus}
-        onCreated={(id) => setOpenIssueId(id)}
+        onCreated={(id) => {
+          if (sprintId && user) {
+            // Issues created inline on a sprint board land in that sprint.
+            useIssuesStore.getState().updateIssue(id, { sprintId }, user.id);
+          }
+          setOpenIssueId(id);
+        }}
       />
     </>
   );

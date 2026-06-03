@@ -123,13 +123,13 @@ export default function SettingsPage() {
                   onClick={() => {
                     if (!confirm('Wipe local storage? You will be logged out.')) return;
                     [
-                      'jira-clone-projects',
-                      'jira-clone-issues',
-                      'jira-clone-sprints',
-                      'jira-clone-custom-fields',
-                      'jira-clone-notifications',
-                      'jira-clone-auth',
-                      'jira-clone-theme',
+                      'jupiter-projects',
+                      'jupiter-issues',
+                      'jupiter-sprints',
+                      'jupiter-custom-fields',
+                      'jupiter-notifications',
+                      'jupiter-auth',
+                      'jupiter-theme',
                     ].forEach((k) => localStorage.removeItem(k));
                     window.location.reload();
                   }}

@@ -78,6 +78,6 @@ export const useProjectsStore = create<ProjectsState>()(
 
       reseed: () => set({ projects: SEED_PROJECTS, members: SEED_MEMBERS }),
     }),
-    { name: 'jira-clone-projects' },
+    { name: 'jupiter-projects' },
   ),
 );

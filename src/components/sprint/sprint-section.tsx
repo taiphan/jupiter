@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -13,6 +14,7 @@ import {
   MoreHorizontal,
   Trash2,
   GripVertical,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,18 +25,19 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import type { Issue, Sprint } from '@/lib/types';
 import { useSprintsStore } from '@/lib/sprints-store';
 import { useIssuesStore } from '@/lib/issues-store';
+import { useProjectsStore } from '@/lib/projects-store';
 import { useAuthStore } from '@/lib/auth-store';
 import { hasPermission } from '@/lib/permissions';
 import { IssueRow } from '@/components/issue/issue-row';
 import { formatDate, cn } from '@/lib/utils';
+import {
+  StartSprintDialog,
+  CompleteSprintDialog,
+  RenameSprintDialog,
+} from './sprint-dialogs';
 
 interface SprintSectionProps {
   /** Stable id used by the drop zone (sprint id, or 'backlog'). */
@@ -51,10 +54,12 @@ export function SprintSection({
   const [open, setOpen] = useState(true);
   const [showStart, setShowStart] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const [showRename, setShowRename] = useState(false);
 
   const startSprint = useSprintsStore((s) => s.startSprint);
   const completeSprint = useSprintsStore((s) => s.completeSprint);
   const deleteSprint = useSprintsStore((s) => s.deleteSprint);
+  const updateSprint = useSprintsStore((s) => s.updateSprint);
   const removeIssueFromSprint = useSprintsStore((s) => s.removeIssueFromSprint);
   const addIssueToSprint = useSprintsStore((s) => s.addIssueToSprint);
   const projectSprints = useSprintsStore((s) =>
@@ -76,6 +81,12 @@ export function SprintSection({
   const todoCount = issues.length - completedCount - inProgressCount;
   const totalPoints = issues.reduce((sum, i) => sum + (i.storyPoints ?? 0), 0);
 
+  const projectKey = useProjectsStore((s) =>
+    sprint ? s.getProject(sprint.projectId)?.key : undefined,
+  );
+  const sprintBoardHref =
+    sprint && projectKey ? `/projects/${projectKey}/sprints/${sprint.id}` : null;
+
   const otherSprints = sprint
     ? projectSprints.filter((s) => s.id !== sprint.id && s.state !== 'completed')
     : [];
@@ -96,13 +107,25 @@ export function SprintSection({
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="flex items-center gap-1.5 text-sm font-semibold cursor-pointer"
+          className="flex items-center text-muted-foreground cursor-pointer"
+          aria-label={open ? 'Collapse section' : 'Expand section'}
         >
           {open
-            ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-            : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-          {isBacklog ? 'Backlog' : sprint!.name}
+            ? <ChevronDown className="h-3.5 w-3.5" />
+            : <ChevronRight className="h-3.5 w-3.5" />}
         </button>
+        {isBacklog ? (
+          <span className="text-sm font-semibold">Backlog</span>
+        ) : sprintBoardHref ? (
+          <Link
+            href={sprintBoardHref}
+            className="text-sm font-semibold hover:underline focus-visible:underline focus-visible:outline-none"
+          >
+            {sprint!.name}
+          </Link>
+        ) : (
+          <span className="text-sm font-semibold">{sprint!.name}</span>
+        )}
 
         {sprint && (
           <Badge
@@ -182,6 +205,13 @@ export function SprintSection({
                 }
               />
               <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => setShowRename(true)}
+                >
+                  <Pencil className="h-3.5 w-3.5" /> Rename sprint
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="cursor-pointer text-destructive focus:text-destructive"
                   onClick={() => {
@@ -268,6 +298,18 @@ export function SprintSection({
           onComplete={(opts) => {
             completeSprint(sprint.id, opts);
             setShowComplete(false);
+          }}
+        />
+      )}
+
+      {sprint && (
+        <RenameSprintDialog
+          open={showRename}
+          onClose={() => setShowRename(false)}
+          sprint={sprint}
+          onRename={(next) => {
+            updateSprint(sprint.id, next);
+            setShowRename(false);
           }}
         />
       )}
@@ -371,156 +413,6 @@ function SortableIssueRow({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-    </div>
-  );
-}
-
-function StartSprintDialog({
-  open, onClose, sprint, issueCount, onStart,
-}: {
-  open: boolean;
-  onClose: () => void;
-  sprint: Sprint;
-  issueCount: number;
-  onStart: (range: { startDate: string; endDate: string }) => void;
-}) {
-  const [name, setName] = useState(sprint.name);
-  const [goal, setGoal] = useState(sprint.goal ?? '');
-  const today = new Date();
-  const inTwoWeeks = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
-  const [start, setStart] = useState(today.toISOString().slice(0, 10));
-  const [end, setEnd] = useState(inTwoWeeks.toISOString().slice(0, 10));
-
-  return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Start sprint</DialogTitle>
-          <DialogDescription>
-            {issueCount} {issueCount === 1 ? 'issue' : 'issues'} will be included in this sprint.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <Field label="Sprint name">
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </Field>
-          <Field label="Sprint goal">
-            <Textarea
-              value={goal}
-              onChange={(e) => setGoal(e.target.value)}
-              rows={2}
-              placeholder="What does success look like for this sprint?"
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Start date">
-              <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-            </Field>
-            <Field label="End date">
-              <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
-            </Field>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" className="cursor-pointer" onClick={onClose}>Cancel</Button>
-          <Button
-            className="cursor-pointer"
-            onClick={() => {
-              onStart({
-                startDate: new Date(start).toISOString(),
-                endDate: new Date(end).toISOString(),
-              });
-            }}
-          >
-            Start sprint
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function CompleteSprintDialog({
-  open, onClose, sprint, completed, incomplete, otherSprints, onComplete,
-}: {
-  open: boolean;
-  onClose: () => void;
-  sprint: Sprint;
-  completed: number;
-  incomplete: number;
-  otherSprints: Sprint[];
-  onComplete: (opts: { moveIncompleteToSprintId?: string }) => void;
-}) {
-  const [target, setTarget] = useState<string>('backlog');
-
-  return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Complete {sprint.name}</DialogTitle>
-          <DialogDescription>
-            {completed} {completed === 1 ? 'issue is' : 'issues are'} done.{' '}
-            {incomplete} {incomplete === 1 ? 'issue is' : 'issues are'} still in flight.
-          </DialogDescription>
-        </DialogHeader>
-
-        {incomplete > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Move incomplete issues to:</p>
-            <div className="space-y-1">
-              <label className="flex cursor-pointer items-center gap-2 rounded-md border p-2.5 hover:bg-muted">
-                <input
-                  type="radio"
-                  name="move-target"
-                  checked={target === 'backlog'}
-                  onChange={() => setTarget('backlog')}
-                />
-                <span className="text-sm">Backlog</span>
-              </label>
-              {otherSprints.map((s) => (
-                <label
-                  key={s.id}
-                  className="flex cursor-pointer items-center gap-2 rounded-md border p-2.5 hover:bg-muted"
-                >
-                  <input
-                    type="radio"
-                    name="move-target"
-                    checked={target === s.id}
-                    onChange={() => setTarget(s.id)}
-                  />
-                  <span className="text-sm">{s.name}</span>
-                  <Badge variant="secondary" className="ml-auto text-[10px] capitalize">
-                    {s.state}
-                  </Badge>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <DialogFooter>
-          <Button variant="ghost" className="cursor-pointer" onClick={onClose}>Cancel</Button>
-          <Button
-            className="cursor-pointer"
-            onClick={() =>
-              onComplete({
-                moveIncompleteToSprintId: target === 'backlog' ? undefined : target,
-              })
-            }
-          >
-            Complete sprint
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <div className="text-xs font-medium">{label}</div>
-      {children}
     </div>
   );
 }

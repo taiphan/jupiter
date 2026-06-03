@@ -317,7 +317,7 @@ export const useIssuesStore = create<IssuesState>()(
 
       reseed: () => set({ issues: SEED_ISSUES, comments: SEED_COMMENTS, activity: SEED_ACTIVITY, attachments: [] }),
     }),
-    { name: 'jira-clone-issues' },
+    { name: 'jupiter-issues' },
   ),
 );
 

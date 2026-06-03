@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Plus, Search, Code2, ListFilter, CircleHelp, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
@@ -45,6 +45,18 @@ function IssuesPageInner() {
   const [jql, setJql] = useState('status != Done ORDER BY updated DESC');
   const [appliedJql, setAppliedJql] = useState('');
   const [jqlError, setJqlError] = useState<string | null>(null);
+  const [recent, setRecent] = useState<string[]>([]);
+
+  // Load recent JQL queries from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('jupiter-jql-recent');
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration from localStorage
+      if (raw) setRecent(JSON.parse(raw));
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const [openIssueId, setOpenIssueId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -86,8 +98,28 @@ function IssuesPageInner() {
   const runQuery = () => {
     const err = validateJql(jql);
     setJqlError(err);
-    if (!err) setAppliedJql(jql);
+    if (!err) {
+      setAppliedJql(jql);
+      const trimmed = jql.trim();
+      if (trimmed) {
+        setRecent((prev) => {
+          const next = [trimmed, ...prev.filter((q) => q !== trimmed)].slice(0, 6);
+          try {
+            localStorage.setItem('jupiter-jql-recent', JSON.stringify(next));
+          } catch {
+            /* ignore */
+          }
+          return next;
+        });
+      }
+    }
   };
+
+  const EXAMPLES = [
+    'assignee = currentUser() AND status != Done',
+    'type = bug AND priority IN (high, highest)',
+    'status = in-progress ORDER BY priority DESC',
+  ];
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -191,6 +223,61 @@ function IssuesPageInner() {
                   {jqlError}
                 </div>
               )}
+
+              {/* Example queries */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] text-muted-foreground">Examples:</span>
+                {EXAMPLES.map((ex) => (
+                  <button
+                    key={ex}
+                    type="button"
+                    onClick={() => {
+                      setJql(ex);
+                      setJqlError(null);
+                    }}
+                    className="rounded-full border bg-muted/40 px-2 py-0.5 font-mono text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
+
+              {/* Recent queries */}
+              {recent.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] text-muted-foreground">Recent:</span>
+                  {recent.map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => {
+                        setJql(q);
+                        setJqlError(null);
+                        setAppliedJql(q);
+                      }}
+                      className="max-w-[260px] truncate rounded-full border px-2 py-0.5 font-mono text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                      title={q}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRecent([]);
+                      try {
+                        localStorage.removeItem('jupiter-jql-recent');
+                      } catch {
+                        /* ignore */
+                      }
+                    }}
+                    className="text-[10px] text-muted-foreground underline hover:text-foreground cursor-pointer"
+                  >
+                    clear
+                  </button>
+                </div>
+              )}
+
               {!appliedJql && !jqlError && (
                 <p className="text-[11px] text-muted-foreground">Press Run (or Enter) to execute your query.</p>
               )}

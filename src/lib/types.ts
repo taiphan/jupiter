@@ -210,7 +210,9 @@ export type ActivityKind =
   | 'description'
   | 'label'
   | 'parent'
-  | 'comment';
+  | 'comment'
+  | 'link-added'
+  | 'link-removed';
 
 export interface ActivityEntry {
   id: string;
@@ -254,4 +256,44 @@ export interface Sprint {
   endDate?: string;
   /** Set when the sprint is completed */
   completedAt?: string;
+}
+
+// ─── Issue links ────────────────────────────────────────────────────────────
+
+/**
+ * Directed link types between two distinct issues.
+ *
+ * Paired link types (`blocks` ↔ `is_blocked_by`, `clones` ↔ `is_cloned_by`,
+ * `duplicates` ↔ `is_duplicated_by`) are persisted as a single canonical row
+ * (the "from→to" direction) and the inverse is derived on read. `relates_to`
+ * is symmetric and stores a single canonical row.
+ */
+export const ISSUE_LINK_TYPES = [
+  'blocks',
+  'is_blocked_by',
+  'relates_to',
+  'clones',
+  'is_cloned_by',
+  'duplicates',
+  'is_duplicated_by',
+] as const;
+export type IssueLinkType = (typeof ISSUE_LINK_TYPES)[number];
+
+export const ISSUE_LINK_TYPE_LABELS: Record<IssueLinkType, string> = {
+  blocks: 'Blocks',
+  is_blocked_by: 'Is blocked by',
+  relates_to: 'Relates to',
+  clones: 'Clones',
+  is_cloned_by: 'Is cloned by',
+  duplicates: 'Duplicates',
+  is_duplicated_by: 'Is duplicated by',
+};
+
+export interface IssueLink {
+  id: string;
+  type: IssueLinkType;
+  fromIssueId: string;
+  toIssueId: string;
+  createdAt: string;
+  createdBy: string;
 }

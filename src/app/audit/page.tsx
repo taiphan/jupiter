@@ -28,6 +28,8 @@ const KIND_LABELS: Record<ActivityKind | 'all', string> = {
   label: 'Labels',
   parent: 'Parent',
   comment: 'Comment',
+  'link-added': 'Link added',
+  'link-removed': 'Link removed',
 };
 
 export default function AuditLogPage() {

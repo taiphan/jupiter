@@ -2,9 +2,11 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Paperclip, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { Issue } from '@/lib/types';
 import { useProjectsStore } from '@/lib/projects-store';
+import { useIssuesStore } from '@/lib/issues-store';
 import { IssueTypeIcon } from '@/components/issue/issue-icon';
 import { PriorityIcon } from '@/components/issue/priority-icon';
 import { UserAvatar } from '@/components/issue/user-avatar';
@@ -18,6 +20,12 @@ interface BoardCardProps {
 export function BoardCard({ issue, onOpen }: BoardCardProps) {
   const assignee = useProjectsStore((s) =>
     issue.assigneeId ? s.members.find((m) => m.id === issue.assigneeId) : undefined,
+  );
+  const attachmentCount = useIssuesStore(
+    (s) => s.attachments.filter((a) => a.issueId === issue.id).length,
+  );
+  const commentCount = useIssuesStore(
+    (s) => s.comments.filter((c) => c.issueId === issue.id).length,
   );
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -71,6 +79,19 @@ export function BoardCard({ issue, onOpen }: BoardCardProps) {
         <IssueTypeIcon type={issue.type} />
         <span className="font-mono text-[11px] text-muted-foreground">{issue.key}</span>
         <PriorityIcon priority={issue.priority} className="ml-1" />
+
+        {commentCount > 0 && (
+          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <MessageSquare className="h-3 w-3" aria-hidden="true" />
+            {commentCount}
+          </span>
+        )}
+        {attachmentCount > 0 && (
+          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <Paperclip className="h-3 w-3" aria-hidden="true" />
+            {attachmentCount}
+          </span>
+        )}
 
         <div className="ml-auto flex items-center gap-1.5">
           {issue.storyPoints != null && (
