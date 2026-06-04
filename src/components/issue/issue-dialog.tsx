@@ -32,6 +32,8 @@ import {
 } from '@/lib/types';
 import type { Issue, IssueStatus, IssueType, Priority, CustomFieldValue } from '@/lib/types';
 import { timeAgo, formatBytes } from '@/lib/utils';
+import { canTransition as isWorkflowTransitionAllowed } from '@/lib/workflow-transitions';
+import { formatDueDate, isOverdue } from '@/lib/derive/due-date';
 import { IssueTypeIcon } from './issue-icon';
 import { PriorityIcon } from './priority-icon';
 import { UserAvatar } from './user-avatar';
@@ -68,6 +70,7 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
   const [descriptionValue, setDescriptionValue] = useState('');
   const [commentValue, setCommentValue] = useState('');
   const [labelValue, setLabelValue] = useState('');
+  const [transitionError, setTransitionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (issue) {
@@ -312,7 +315,16 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
             <Select
               disabled={!canTransition}
               value={issue.status}
-              onValueChange={(v) => v && updateIssue(issue.id, { status: v as IssueStatus }, user.id)}
+              onValueChange={(v) => {
+                if (!v) return;
+                const next = v as IssueStatus;
+                if (!isWorkflowTransitionAllowed(user.role, issue.status, next, project)) {
+                  setTransitionError('Transition not allowed for your role.');
+                  return;
+                }
+                setTransitionError(null);
+                updateIssue(issue.id, { status: next }, user.id);
+              }}
             >
               <SelectTrigger className="h-8 text-xs" aria-label="Status">
                 <SelectValue />
@@ -323,6 +335,9 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
                 ))}
               </SelectContent>
             </Select>
+            {transitionError && (
+              <p className="mt-1 text-[11px] text-destructive">{transitionError}</p>
+            )}
           </FieldRow>
 
           <FieldRow label="Assignee">
@@ -431,6 +446,25 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
               />
             ) : (
               <span className="text-xs">{issue.storyPoints ?? '—'}</span>
+            )}
+          </FieldRow>
+
+          <FieldRow label="Due date">
+            {canEdit ? (
+              <Input
+                type="date"
+                value={issue.dueDate ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  updateIssue(issue.id, { dueDate: v || undefined }, user.id);
+                }}
+                className="h-8 text-xs"
+              />
+            ) : (
+              <span className={`text-xs ${isOverdue(issue) ? 'font-medium text-destructive' : ''}`}>
+                {formatDueDate(issue.dueDate)}
+                {isOverdue(issue) ? ' · Overdue' : ''}
+              </span>
             )}
           </FieldRow>
 

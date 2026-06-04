@@ -27,6 +27,8 @@ const TABS: Array<{ label: string; sub: string }> = [
   { label: 'Summary', sub: 'summary' },
   { label: 'Board', sub: '' },
   { label: 'Backlog', sub: 'backlog' },
+  { label: 'List', sub: 'list' },
+  { label: 'Calendar', sub: 'calendar' },
   { label: 'Timeline', sub: 'timeline' },
   { label: 'Reports', sub: 'reports' },
 ];
@@ -56,6 +58,8 @@ export function ProjectShell({ projectKey, children }: ProjectShellProps) {
       ? ''
       : pathname.startsWith(`${baseUrl}/summary`) ? 'summary'
       : pathname.startsWith(`${baseUrl}/backlog`) ? 'backlog'
+      : pathname.startsWith(`${baseUrl}/list`) ? 'list'
+      : pathname.startsWith(`${baseUrl}/calendar`) ? 'calendar'
       : pathname.startsWith(`${baseUrl}/timeline`) ? 'timeline'
       : pathname.startsWith(`${baseUrl}/reports`) ? 'reports'
       : pathname.startsWith(`${baseUrl}/board-config`) ? 'board-config'

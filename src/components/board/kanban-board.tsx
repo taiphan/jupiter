@@ -18,6 +18,7 @@ import { useProjectsStore } from '@/lib/projects-store';
 import { useAuthStore } from '@/lib/auth-store';
 import type { IssueStatus } from '@/lib/types';
 import { getBoardColumns } from '@/lib/workflow';
+import { canTransition as isWorkflowTransitionAllowed } from '@/lib/workflow-transitions';
 import { hasPermission } from '@/lib/permissions';
 import { BoardColumn } from './board-column';
 import { BoardCard } from './board-card';
@@ -53,6 +54,7 @@ export function KanbanBoard({
   const [openIssueId, setOpenIssueId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createStatus, setCreateStatus] = useState<IssueStatus>('todo');
+  const [blockMessage, setBlockMessage] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -127,6 +129,13 @@ export function KanbanBoard({
     }
 
     if (!toStatus) return;
+
+    if (!isWorkflowTransitionAllowed(user.role, activeIssue.status, toStatus, project)) {
+      setBlockMessage('Transition not allowed for your role.');
+      return;
+    }
+
+    setBlockMessage(null);
     moveIssue({ id: activeIssue.id, toStatus, toIndex, actorId: user.id });
   };
 
@@ -137,6 +146,11 @@ export function KanbanBoard({
 
   return (
     <>
+      {blockMessage && (
+        <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          {blockMessage}
+        </p>
+      )}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}

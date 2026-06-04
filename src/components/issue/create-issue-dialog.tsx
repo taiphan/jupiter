@@ -36,12 +36,13 @@ interface CreateIssueDialogProps {
   onClose: () => void;
   defaultProjectId?: string;
   defaultStatus?: IssueStatus;
+  defaultDueDate?: string;
   /** Called with the new issue id after creation. */
   onCreated?: (id: string) => void;
 }
 
 export function CreateIssueDialog({
-  open, onClose, defaultProjectId, defaultStatus = 'todo', onCreated,
+  open, onClose, defaultProjectId, defaultStatus = 'todo', defaultDueDate, onCreated,
 }: CreateIssueDialogProps) {
   const projects = useProjectsStore((s) => s.projects);
   const members = useProjectsStore((s) => s.members);
@@ -55,6 +56,7 @@ export function CreateIssueDialog({
   const [summary, setSummary] = useState('');
   const [description, setDescription] = useState('');
   const [assigneeId, setAssigneeId] = useState<string>('__unassigned');
+  const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -67,8 +69,9 @@ export function CreateIssueDialog({
     setSummary('');
     setDescription('');
     setAssigneeId('__unassigned');
+    setDueDate(defaultDueDate ?? '');
     setError('');
-  }, [open, defaultProjectId, defaultStatus, projects]);
+  }, [open, defaultProjectId, defaultStatus, defaultDueDate, projects]);
 
   if (!user) return null;
 
@@ -93,6 +96,7 @@ export function CreateIssueDialog({
       priority,
       assigneeId: assigneeId === '__unassigned' ? undefined : assigneeId,
       reporterId: user.id,
+      dueDate: dueDate || undefined,
     });
     onCreated?.(issue.id);
     onClose();
@@ -197,6 +201,14 @@ export function CreateIssueDialog({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional — what does &quot;done&quot; look like?"
               rows={4}
+            />
+          </Field>
+
+          <Field label="Due date">
+            <Input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
             />
           </Field>
 

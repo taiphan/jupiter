@@ -14,6 +14,7 @@ import { hasPermission } from '@/lib/permissions';
 import { STATUS_LABELS, STATUS_DEFAULTS } from '@/lib/types';
 import type { IssueStatus, Project } from '@/lib/types';
 import { getWorkflow } from '@/lib/workflow';
+import { DEFAULT_TRANSITION_RULES } from '@/lib/workflow-transitions';
 import { cn } from '@/lib/utils';
 
 const COLOR_OPTIONS = [
@@ -253,6 +254,31 @@ export function BoardConfigView({ projectKey }: { projectKey: string }) {
                 Save workflow
               </Button>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Transition rules</CardTitle>
+          <CardDescription>
+            Role-based rules for moving issues between statuses. Enforced on the board and in issue details.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <ul className="list-disc space-y-1 pl-4 text-xs text-muted-foreground">
+            <li>Admin, lead, and member: all transitions allowed (default)</li>
+            <li>Viewer: cannot change status (default)</li>
+          </ul>
+          {canEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="cursor-pointer"
+              onClick={() => updateProject(project.id, { transitionRules: DEFAULT_TRANSITION_RULES })}
+            >
+              Reset transition rules to defaults
+            </Button>
           )}
         </CardContent>
       </Card>

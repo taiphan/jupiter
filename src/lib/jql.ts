@@ -10,7 +10,7 @@
  *   value      := bareword | "quoted" | (a, b, c)
  *
  * Fields: project, type, status, priority, assignee, reporter, label,
- *         summary, sprint, storypoints, created, updated, key
+ *         summary, sprint, storypoints, created, updated, key, duedate
  *
  * Functions: currentUser(), unassigned, EMPTY
  */
@@ -256,6 +256,8 @@ function fieldValue(issue: Issue, field: string): string | number | undefined | 
     case 'key': return issue.key;
     case 'sprint': return issue.sprintId ?? '__none';
     case 'storypoints': return issue.storyPoints ?? 0;
+    case 'duedate':
+    case 'due': return issue.dueDate ?? '';
     case 'created': return issue.createdAt;
     case 'updated': return issue.updatedAt;
     case 'label': return issue.labels.join(',');

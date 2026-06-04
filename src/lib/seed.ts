@@ -68,6 +68,7 @@ export const SEED_ISSUES: Issue[] = [
     status: 'in-progress', priority: 'high',
     assigneeId: 'usr_member', reporterId: 'usr_lead',
     labels: ['design'], parentId: 'iss_web_1', storyPoints: 3, rank: 2000, sprintId: 'spr_web_3',
+    dueDate: '2026-06-05',
     createdAt: earlier, updatedAt: yesterday,
   },
   {
@@ -76,6 +77,7 @@ export const SEED_ISSUES: Issue[] = [
     status: 'todo', priority: 'medium',
     assigneeId: 'usr_member', reporterId: 'usr_lead',
     labels: ['analytics'], storyPoints: 2, rank: 3000, sprintId: 'spr_web_3',
+    dueDate: '2026-06-10',
     createdAt: earlier, updatedAt: earlier,
   },
   {
@@ -85,6 +87,7 @@ export const SEED_ISSUES: Issue[] = [
     status: 'in-review', priority: 'highest',
     assigneeId: 'usr_member', reporterId: 'usr_admin',
     labels: ['mobile', 'safari'], storyPoints: 1, rank: 4000, sprintId: 'spr_web_3',
+    dueDate: '2026-06-08',
     createdAt: earlier, updatedAt: now,
   },
   {
@@ -135,6 +138,7 @@ export const SEED_ISSUES: Issue[] = [
     status: 'todo', priority: 'medium',
     assigneeId: 'usr_member', reporterId: 'usr_lead',
     labels: ['onboarding'], parentId: 'iss_mob_1', storyPoints: 3, rank: 2000, sprintId: 'spr_mob_1',
+    dueDate: '2026-06-06',
     createdAt: earlier, updatedAt: earlier,
   },
   {
@@ -143,6 +147,7 @@ export const SEED_ISSUES: Issue[] = [
     status: 'in-progress', priority: 'highest',
     assigneeId: 'usr_member', reporterId: 'usr_admin',
     labels: ['crash', 'android'], storyPoints: 5, rank: 3000, sprintId: 'spr_mob_1',
+    dueDate: '2026-06-04',
     createdAt: earlier, updatedAt: now,
   },
   {
@@ -169,6 +174,7 @@ export const SEED_ISSUES: Issue[] = [
     status: 'in-progress', priority: 'high',
     assigneeId: 'usr_admin', reporterId: 'usr_admin',
     labels: ['ci'], storyPoints: 5, rank: 1000, sprintId: 'spr_plat_2',
+    dueDate: '2026-06-12',
     createdAt: earlier, updatedAt: now,
   },
   {
@@ -177,6 +183,7 @@ export const SEED_ISSUES: Issue[] = [
     status: 'todo', priority: 'medium',
     assigneeId: 'usr_member', reporterId: 'usr_admin',
     labels: ['observability'], storyPoints: 3, rank: 2000, sprintId: 'spr_plat_2',
+    dueDate: '2026-06-15',
     createdAt: earlier, updatedAt: earlier,
   },
   {

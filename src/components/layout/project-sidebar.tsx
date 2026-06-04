@@ -11,6 +11,7 @@ import {
   KanbanSquare,
   ListTodo,
   Calendar,
+  CalendarDays,
   BarChart3,
   Settings as SettingsIcon,
   ArrowLeftRight,
@@ -57,6 +58,8 @@ export function ProjectSidebar({ project }: ProjectSidebarProps) {
     { label: 'Timeline', href: `${baseUrl}/timeline`, icon: Calendar },
     { label: 'Backlog', href: `${baseUrl}/backlog`, icon: ListTodo },
     { label: 'Board', href: baseUrl, icon: KanbanSquare },
+    { label: 'List', href: `${baseUrl}/list`, icon: ListTodo },
+    { label: 'Calendar', href: `${baseUrl}/calendar`, icon: CalendarDays },
     { label: 'Reports', href: `${baseUrl}/reports`, icon: BarChart3 },
   ];
 

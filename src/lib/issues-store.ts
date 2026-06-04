@@ -47,6 +47,7 @@ interface IssuesState {
     parentId?: string;
     labels?: string[];
     storyPoints?: number;
+    dueDate?: string;
   }) => Issue;
 
   updateIssue: (id: string, patch: Partial<Omit<Issue, 'id' | 'key' | 'projectId' | 'createdAt'>>, actorId: string) => void;
@@ -122,7 +123,7 @@ export const useIssuesStore = create<IssuesState>()(
       createIssue: ({
         projectId, type, summary, description,
         status = 'todo', priority = 'medium',
-        assigneeId, reporterId, parentId, labels = [], storyPoints,
+        assigneeId, reporterId, parentId, labels = [], storyPoints, dueDate,
       }) => {
         // Mint the next key from the projects store
         const project = useProjectsStore.getState().getProject(projectId);
@@ -149,6 +150,7 @@ export const useIssuesStore = create<IssuesState>()(
           parentId,
           labels,
           storyPoints,
+          dueDate,
           rank: lastRank + RANK_STEP,
           createdAt: nowIso(),
           updatedAt: nowIso(),
@@ -196,6 +198,10 @@ export const useIssuesStore = create<IssuesState>()(
           }
           if (patch.customFields && JSON.stringify(patch.customFields) !== JSON.stringify(before.customFields)) {
             activity = pushActivity(activity, id, actorId, 'label', 'Updated fields');
+          }
+          if ('dueDate' in patch && patch.dueDate !== before.dueDate) {
+            activity = pushActivity(activity, id, actorId, 'label',
+              patch.dueDate ? `Due date set to ${patch.dueDate}` : 'Due date cleared');
           }
 
           return {

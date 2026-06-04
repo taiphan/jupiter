@@ -494,7 +494,10 @@ export function GlobalTopNav() {
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
+              <DropdownMenuItem
+                onClick={() => void logout()}
+                className="cursor-pointer text-destructive focus:text-destructive"
+              >
                 <LogOut className="h-3.5 w-3.5" /> Log out
               </DropdownMenuItem>
             </DropdownMenuContent>

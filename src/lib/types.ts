@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { UserRole } from './auth-store';
 
 // ─── Issue type ─────────────────────────────────────────────────────────────
 
@@ -107,9 +108,18 @@ export const projectSchema = z.object({
       }),
     )
     .optional(),
+  /** Role-based allowed status transitions (from → to[]). Omitted roles use defaults. */
+  transitionRules: z
+    .record(
+      z.enum(['admin', 'lead', 'member', 'viewer']),
+      z.record(z.enum(STATUSES), z.array(z.enum(STATUSES))),
+    )
+    .optional(),
 });
 
 export type Project = z.infer<typeof projectSchema>;
+
+export type TransitionRules = NonNullable<Project['transitionRules']>;
 
 // ─── Custom fields ──────────────────────────────────────────────────────────
 
@@ -176,6 +186,8 @@ export const issueSchema = z.object({
   /** Sprint this issue is committed to */
   sprintId: z.string().optional(),
   storyPoints: z.number().int().nonnegative().optional(),
+  /** Due date (calendar day, YYYY-MM-DD) */
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   /** Values for project-defined custom fields, keyed by field id */
   customFields: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   /** Position within its column for stable ordering on the board */

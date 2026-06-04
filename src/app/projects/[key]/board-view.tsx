@@ -4,8 +4,11 @@ import { useMemo, useState } from 'react';
 import { useProjectsStore } from '@/lib/projects-store';
 import { useSprintsStore } from '@/lib/sprints-store';
 import { useIssuesStore } from '@/lib/issues-store';
+import { useAuthStore } from '@/lib/auth-store';
 import { KanbanBoard } from '@/components/board/kanban-board';
 import { IssueFiltersBar } from '@/components/issue/issue-filters';
+import { QuickFilterBar, matchQuickFilterId } from '@/components/issue/quick-filter-bar';
+import { useQuickFiltersStore } from '@/lib/quick-filters-store';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -15,12 +18,15 @@ import { formatDate } from '@/lib/utils';
 
 export function BoardView({ projectKey }: { projectKey: string }) {
   const project = useProjectsStore((s) => s.getProjectByKey(projectKey));
-  const sprintsByProject = useSprintsStore(
-    (s) => (project ? s.getSprintsByProject(project.id) : []),
-  );
+  const getSprintsByProject = useSprintsStore((s) => s.getSprintsByProject);
   const allIssues = useIssuesStore((s) => s.issues);
+  const user = useAuthStore((s) => s.user);
+  const forProject = useQuickFiltersStore((s) => s.forProject);
+
+  const sprintsByProject = project ? getSprintsByProject(project.id) : [];
 
   const [filters, setFilters] = useState<IssueFilters>({});
+  const [activeQuickId, setActiveQuickId] = useState('__all');
   const activeSprint = sprintsByProject.find((s) => s.state === 'active');
   const [sprintFilter, setSprintFilter] = useState<string>(activeSprint ? activeSprint.id : 'all');
 
@@ -40,10 +46,28 @@ export function BoardView({ projectKey }: { projectKey: string }) {
 
   const selectedSprint = sprintsByProject.find((s) => s.id === sprintFilter);
 
-  if (!project) return null;
+  if (!project || !user) return null;
+
+  const handleFiltersChange = (next: IssueFilters) => {
+    setFilters(next);
+    setActiveQuickId(matchQuickFilterId(project.id, next, forProject));
+  };
+
+  const handleQuickChange = (id: string, qf: IssueFilters) => {
+    setActiveQuickId(id);
+    setFilters(qf);
+  };
 
   return (
     <div className="space-y-3">
+      <QuickFilterBar
+        projectId={project.id}
+        userId={user.id}
+        userRole={user.role}
+        filters={filters}
+        activeQuickId={activeQuickId}
+        onQuickChange={handleQuickChange}
+      />
       <div className="flex flex-wrap items-center gap-2">
         <Select value={sprintFilter} onValueChange={(v) => v && setSprintFilter(v)}>
           <SelectTrigger className="w-[220px]" aria-label="Sprint">
@@ -74,7 +98,7 @@ export function BoardView({ projectKey }: { projectKey: string }) {
         )}
 
         <div className="flex-1 min-w-[220px]">
-          <IssueFiltersBar filters={filters} onChange={setFilters} showStatus={false} />
+          <IssueFiltersBar filters={filters} onChange={handleFiltersChange} showStatus={false} />
         </div>
       </div>
 

@@ -25,19 +25,23 @@ import { IssueRow } from '@/components/issue/issue-row';
 import { IssueDialog } from '@/components/issue/issue-dialog';
 import { CreateIssueDialog } from '@/components/issue/create-issue-dialog';
 import { SprintSection } from '@/components/sprint/sprint-section';
+import { QuickFilterBar, matchQuickFilterId } from '@/components/issue/quick-filter-bar';
+import { useQuickFiltersStore } from '@/lib/quick-filters-store';
 import type { Issue } from '@/lib/types';
 
 export function BacklogView({ projectKey }: { projectKey: string }) {
   const project = useProjectsStore((s) => s.getProjectByKey(projectKey));
   const issues = useIssuesStore((s) => s.issues);
   const updateIssue = useIssuesStore((s) => s.updateIssue);
-  const sprintsByProject = useSprintsStore(
-    (s) => project ? s.getSprintsByProject(project.id) : [],
-  );
   const createSprint = useSprintsStore((s) => s.createSprint);
+  const getSprintsByProject = useSprintsStore((s) => s.getSprintsByProject);
   const user = useAuthStore((s) => s.user);
+  const forProject = useQuickFiltersStore((s) => s.forProject);
+
+  const sprintsByProject = project ? getSprintsByProject(project.id) : [];
 
   const [filters, setFilters] = useState<IssueFilters>({});
+  const [activeQuickId, setActiveQuickId] = useState('__all');
   const [openIssueId, setOpenIssueId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createSprintTargetId, setCreateSprintTargetId] = useState<string | undefined>(undefined);
@@ -72,11 +76,21 @@ export function BacklogView({ projectKey }: { projectKey: string }) {
     [activeId, issues],
   );
 
-  if (!project) return null;
+  if (!project || !user) return null;
 
-  const canCreate = hasPermission(user?.role, 'issues.create');
-  const canManage = hasPermission(user?.role, 'projects.edit');
-  const canEdit = hasPermission(user?.role, 'issues.edit');
+  const handleFiltersChange = (next: IssueFilters) => {
+    setFilters(next);
+    setActiveQuickId(matchQuickFilterId(project.id, next, forProject));
+  };
+
+  const handleQuickChange = (id: string, qf: IssueFilters) => {
+    setActiveQuickId(id);
+    setFilters(qf);
+  };
+
+  const canCreate = hasPermission(user.role, 'issues.create');
+  const canManage = hasPermission(user.role, 'projects.edit');
+  const canEdit = hasPermission(user.role, 'issues.edit');
 
   const onOpenCreate = (sprintId?: string) => {
     setCreateSprintTargetId(sprintId);
@@ -117,7 +131,15 @@ export function BacklogView({ projectKey }: { projectKey: string }) {
 
   return (
     <div className="space-y-4">
-      <IssueFiltersBar filters={filters} onChange={setFilters} />
+      <QuickFilterBar
+        projectId={project.id}
+        userId={user.id}
+        userRole={user.role}
+        filters={filters}
+        activeQuickId={activeQuickId}
+        onQuickChange={handleQuickChange}
+      />
+      <IssueFiltersBar filters={filters} onChange={handleFiltersChange} />
 
       <DndContext
         sensors={sensors}
