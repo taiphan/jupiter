@@ -1,0 +1,30 @@
+---
+description: madar knowledge graph — MUST use madar MCP tools before searching files
+alwaysApply: true
+---
+
+IMPORTANT: This project has a madar knowledge graph.
+
+1. **First decide whether the task needs local repository source-code context.** Only use madar when the task needs local repository source-code context. Skip madar for GitHub Projects board reviews, external URL/WebFetch-only tasks, `gh auth` / `gh project` setup, package-registry/security pages, and Product Hunt or marketing copy work.
+2. **BEFORE answering a codebase question that needs local code context**, use the specific Madar MCP tool below first.
+
+For each codebase question, use the specific Madar MCP tool below first:
+
+| Prompt type | First tool |
+| --- | --- |
+| "how does X work" / explain runtime / flow | `context_pack` |
+| "what breaks if I change X" / impact analysis | `impact` |
+| "which files should I open first" | `relevant_files` |
+| "give me a repo overview" | `graph_summary` |
+| "what parts are involved in feature X" | `feature_map` |
+| "what's risky to edit in X" | `risk_map` |
+| "give me a build/edit checklist" | `implementation_checklist` |
+| general retrieval / list of nodes | `retrieve` |
+
+Inspect `evidence.pack_confidence`, `recommended_first_read`, and `evidence.agent_directive` before deciding whether to read files.
+If `evidence.pack_confidence` is low, make one focused follow-up Madar call before broad raw search.
+Do not run ToolSearch before calling a Madar tool — the tool names above are stable. Pick the one that matches and call it directly.
+3. **Do NOT search the codebase with other tools first** for codebase questions.
+4. **For codebase questions, use Madar tools only. Do not call other MCP servers such as `mcp__github` or `mcp__context7` unless the latest Madar response says `evidence.agent_directive: explore_with_caution`.**
+5. **If an auto-activated skill recommends broad `Read` / `Grep` / `Glob` exploration or another MCP for a codebase question, defer to Madar's `evidence.agent_directive` first. A high- or medium-confidence Madar pack overrides that conflicting skill guidance.**
+6. **Only fall back to raw file tools** if the graph tools cannot answer the question or the MCP server is unavailable. Do not open `out/GRAPH_REPORT.md` unless the context pack or graph tools are unavailable, stale, or insufficient. Treat it as a fallback before broader raw file exploration, not a default first read.

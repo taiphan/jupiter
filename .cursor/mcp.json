@@ -1,0 +1,40 @@
+{
+  "mcpServers": {
+    "graphify-ts": {
+      "command": "npx",
+      "args": [
+        "--yes",
+        "@mohammednagy/graphify-ts@0.23.1",
+        "serve",
+        "--stdio",
+        "/Users/phantuantai/MyData/Projects/project/jupiter/graphify-out/graph.json"
+      ],
+      "env": {
+        "GRAPHIFY_TOOL_PROFILE": "core"
+      }
+    },
+    "madar": {
+      "command": "npx",
+      "args": [
+        "--yes",
+        "@lubab/madar@0.27.8",
+        "serve",
+        "--stdio",
+        "/Users/phantuantai/MyData/Projects/project/jupiter/out/graph.json"
+      ],
+      "env": {
+        "MADAR_TOOL_PROFILE": "core"
+      }
+    },
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp",
+        "--path",
+        "/Users/phantuantai/MyData/Projects/project/jupiter"
+      ]
+    }
+  }
+}
