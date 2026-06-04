@@ -509,7 +509,8 @@ function SprintSelect({
   currentSprintId?: string;
   disabled?: boolean;
 }) {
-  const sprints = useSprintsStore((s) => s.getSprintsByProject(projectId));
+  const getSprintsByProject = useSprintsStore((s) => s.getSprintsByProject);
+  const sprints = getSprintsByProject(projectId);
   const updateIssue = useIssuesStore((s) => s.updateIssue);
   const user = useAuthStore((s) => s.user);
 
@@ -549,7 +550,8 @@ function CustomFieldsEditor({
   canEdit: boolean;
   actorId: string;
 }) {
-  const fields = useCustomFieldsStore((s) => s.getFieldsForProject(issue.projectId));
+  const getFieldsForProject = useCustomFieldsStore((s) => s.getFieldsForProject);
+  const fields = getFieldsForProject(issue.projectId);
   const updateIssue = useIssuesStore((s) => s.updateIssue);
 
   if (fields.length === 0) return null;
@@ -629,7 +631,8 @@ function AttachmentsSection({
   canEdit: boolean;
   uploadedById: string;
 }) {
-  const attachments = useIssuesStore((s) => s.getAttachmentsForIssue(issueId));
+  const getAttachmentsForIssue = useIssuesStore((s) => s.getAttachmentsForIssue);
+  const attachments = getAttachmentsForIssue(issueId);
   const addAttachment = useIssuesStore((s) => s.addAttachment);
   const deleteAttachment = useIssuesStore((s) => s.deleteAttachment);
   const inputRef = useRef<HTMLInputElement>(null);
