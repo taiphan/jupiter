@@ -58,6 +58,39 @@ export async function getCurrentUser(): Promise<DbUser | null> {
     .from(schema.users)
     .where(eq(schema.users.id, session.userId))
     .limit(1);
+  const user = userRows[0];
+  if (!user) return null;
+  if (!user.emailVerifiedAt) return null;
+  return user;
+}
+
+/** Current session user including unverified (for verify banner / resend). */
+export async function getCurrentUserAllowUnverified(): Promise<DbUser | null> {
+  const db = getDb();
+  if (!db) return null;
+
+  const jar = await cookies();
+  const sessionId = jar.get(SESSION_COOKIE)?.value;
+  if (!sessionId) return null;
+
+  const rows = await db
+    .select()
+    .from(schema.sessions)
+    .where(eq(schema.sessions.id, sessionId))
+    .limit(1);
+  const session = rows[0];
+  if (!session) return null;
+
+  if (new Date(session.expiresAt).getTime() < Date.now()) {
+    await db.delete(schema.sessions).where(eq(schema.sessions.id, sessionId));
+    return null;
+  }
+
+  const userRows = await db
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.id, session.userId))
+    .limit(1);
   return userRows[0] ?? null;
 }
 

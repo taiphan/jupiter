@@ -1,25 +1,60 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 import { LoginForm } from '@/components/auth/login-form';
+import { VerifyEmailPanel } from '@/components/auth/verify-email-panel';
 import { GlobalTopNav } from './global-top-nav';
 import { RouteGuard } from './route-guard';
+
+const PUBLIC_AUTH_PATHS = new Set([
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+]);
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
 }
 
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
+  const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
+  const hydrateSession = useAuthStore((s) => s.hydrateSession);
 
-  // Avoid flashing login on first paint while localStorage rehydrates
   const [hydrated, setHydrated] = useState(false);
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration flag, syncs with browser-only state
-  useEffect(() => setHydrated(true), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      await hydrateSession();
+      if (!cancelled) setHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrateSession]);
+
   if (!hydrated) return null;
 
-  if (!isAuthenticated) return <LoginForm />;
+  if (PUBLIC_AUTH_PATHS.has(pathname)) {
+    return <>{children}</>;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Suspense fallback={null}>
+        <LoginForm />
+      </Suspense>
+    );
+  }
+
+  if (user && user.emailVerified === false) {
+    return <VerifyEmailPanel />;
+  }
 
   return (
     <div className="flex h-screen flex-col">

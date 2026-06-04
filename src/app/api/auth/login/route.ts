@@ -1,37 +1,47 @@
 import { eq } from 'drizzle-orm';
-import { z } from 'zod';
 import { getDb, schema } from '@/server/db/client';
 import { verifyPassword } from '@/server/auth/password';
 import { createSession } from '@/server/auth/session';
 import { json, error, requireDb } from '@/server/api-helpers';
-
-const bodySchema = z.object({
-  username: z.string().min(1),
-  password: z.string().min(1),
-});
+import { loginBodySchema } from '@/server/auth/schemas';
+import { normalizeEmail } from '@/server/auth/email-normalize';
+import { checkRateLimit, clientIp } from '@/server/auth/rate-limit';
+import { toPublicUser } from '@/server/auth/user-mapper';
 
 export async function POST(request: Request) {
   const dbError = requireDb();
   if (dbError) return dbError;
 
-  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return error('Username and password are required');
+  const ip = clientIp(request);
+  const limit = checkRateLimit(`login:${ip}`, 5, 15 * 60 * 1000);
+  if (!limit.allowed) {
+    return error('Too many attempts. Try again later.', 429);
+  }
+
+  const parsed = loginBodySchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return error('Email and password are required');
 
   const db = getDb()!;
+  const email = normalizeEmail(parsed.data.email);
   const rows = await db
     .select()
     .from(schema.users)
-    .where(eq(schema.users.username, parsed.data.username))
+    .where(eq(schema.users.email, email))
     .limit(1);
   const user = rows[0];
 
-  if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
-    return error('Invalid username or password', 401);
+  if (
+    !user ||
+    !user.passwordHash ||
+    !(await verifyPassword(parsed.data.password, user.passwordHash))
+  ) {
+    return error('Invalid email or password', 401);
+  }
+
+  if (!user.emailVerifiedAt) {
+    return error('Please verify your email before signing in.', 403);
   }
 
   await createSession(user.id);
-
-  const { passwordHash: _ph, ...safe } = user;
-  void _ph;
-  return json({ user: safe });
+  return json({ user: toPublicUser(user) });
 }

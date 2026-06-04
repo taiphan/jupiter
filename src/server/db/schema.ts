@@ -20,13 +20,44 @@ export const users = pgTable('users', {
   username: text('username').notNull().unique(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
-  /** bcrypt-style hash (we use scrypt via node:crypto) */
-  passwordHash: text('password_hash').notNull(),
+  /** scrypt `salt:hash`; null for Google-only accounts */
+  passwordHash: text('password_hash'),
   role: text('role').notNull().$type<'admin' | 'lead' | 'member' | 'viewer'>(),
   avatarColor: text('avatar_color').notNull().default('#0C66E4'),
   title: text('title').notNull().default(''),
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const authTokens = pgTable(
+  'auth_tokens',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    purpose: text('purpose').notNull().$type<'verify_email' | 'password_reset'>(),
+    tokenHash: text('token_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('auth_tokens_user_idx').on(t.userId)],
+);
+
+export const oauthAccounts = pgTable(
+  'oauth_accounts',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull().$type<'google'>(),
+    providerAccountId: text('provider_account_id').notNull(),
+    emailAtLink: text('email_at_link').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('oauth_provider_account').on(t.provider, t.providerAccountId)],
+);
 
 // ─── Sessions ───────────────────────────────────────────────────────────────
 

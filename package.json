@@ -4,8 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3100",
-    "build": "next build",
-    "start": "next start -p 3100",
+    "build": "docker compose build",
+    "build:app": "next build",
+    "deploy": "docker compose up -d --build",
+    "deploy:down": "docker compose down",
+    "deploy:logs": "docker compose logs -f app",
+    "db:push": "docker compose --profile tools run --rm db-push",
+    "db:seed": "docker compose --profile tools run --rm db-seed",
+    "db:setup": "npm run db:push && npm run db:seed",
+    "start": "docker compose up -d",
+    "start:app": "next start -p 3100",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest"

@@ -11,6 +11,7 @@ import { useProjectsStore } from '@/lib/projects-store';
 import { useIssuesStore } from '@/lib/issues-store';
 import { useThemeStore } from '@/lib/theme-store';
 import { hasPermission, ROLE_LABELS, getPermissionsForRole } from '@/lib/permissions';
+import { ConnectedAccountsCard } from '@/components/auth/connected-accounts-card';
 
 export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
@@ -67,6 +68,8 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          <ConnectedAccountsCard />
 
           <Card>
             <CardHeader>

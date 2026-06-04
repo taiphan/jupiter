@@ -1,0 +1,20 @@
+# dependencies & build output (rebuilt inside the image)
+node_modules
+.next
+out
+coverage
+
+# local env & tooling
+.env*
+env.example
+.vercel
+.codegraph
+.git
+.gitignore
+*.md
+!README.md
+
+# tests (not needed in production image)
+**/*.test.ts
+**/*.test.tsx
+vitest.config.ts

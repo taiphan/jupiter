@@ -1,0 +1,75 @@
+# OrbStack / Docker Compose — `npm run build` and `npm run deploy` target this stack.
+# The Next.js compile runs in the Docker build (Linux VM), not on the Mac host.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jupiter-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jupiter
+      POSTGRES_PASSWORD: jupiter
+      POSTGRES_DB: jupiter
+    # Host port 15432 (override with POSTGRES_HOST_PORT). In-network URL still uses :5432.
+    ports:
+      - '${POSTGRES_HOST_PORT:-15432}:5432'
+    volumes:
+      - jupiter_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U jupiter -d jupiter']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jupiter-app
+    restart: unless-stopped
+    ports:
+      - '3100:3100'
+    environment:
+      NODE_ENV: production
+      PORT: '3100'
+      HOSTNAME: '0.0.0.0'
+      DATABASE_URL: postgresql://jupiter:jupiter@postgres:5432/jupiter
+      APP_URL: ${APP_URL:-http://localhost:3100}
+      AUTH_SECRET: ${AUTH_SECRET:-dev-jupiter-auth-secret}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      AUTH_GOOGLE_ENABLED: ${AUTH_GOOGLE_ENABLED:-false}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # One-off schema + demo users: npm run db:setup
+  db-push:
+    profiles: [tools]
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      DATABASE_URL: postgresql://jupiter:jupiter@postgres:5432/jupiter
+    command: sh -c "npm ci && npx drizzle-kit push --force"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  db-seed:
+    profiles: [tools]
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      DATABASE_URL: postgresql://jupiter:jupiter@postgres:5432/jupiter
+    command: sh -c "npm ci && npx tsx src/server/db/seed.ts"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  jupiter_pg_data:
