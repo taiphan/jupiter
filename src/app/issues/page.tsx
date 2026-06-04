@@ -32,22 +32,17 @@ function IssuesPageInner() {
   const params = useSearchParams();
 
   const [mode, setMode] = useState<'basic' | 'jql'>('basic');
-  const [filters, setFilters] = useState<IssueFilters>(() => {
-    const projectParam = params.get('project') ?? undefined;
-    const assignee = params.get('assignee') as IssueFilters['assigneeId'] | null;
-    const status = params.get('status') as IssueFilters['status'] | null;
-    return {
-      projectId: projectParam,
-      assigneeId: assignee ?? undefined,
-      status: status ?? undefined,
-    };
-  });
+  const [filters, setFilters] = useState<IssueFilters>(() => parseFiltersFromParams(params));
   const [jql, setJql] = useState('status != Done ORDER BY updated DESC');
   const [appliedJql, setAppliedJql] = useState('');
   const [jqlError, setJqlError] = useState<string | null>(null);
   const [recent, setRecent] = useState<string[]>([]);
 
-  // Load recent JQL queries from localStorage
+  // Sync filters when navigating via nav links (e.g. Filters → Assigned to me)
+  useEffect(() => {
+    setFilters(parseFiltersFromParams(params));
+  }, [params]);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem('jupiter-jql-recent');
@@ -322,4 +317,15 @@ export default function IssuesPage() {
       <IssuesPageInner />
     </Suspense>
   );
+}
+
+function parseFiltersFromParams(params: URLSearchParams): IssueFilters {
+  const projectParam = params.get('project') ?? undefined;
+  const assignee = params.get('assignee') as IssueFilters['assigneeId'] | null;
+  const status = params.get('status') as IssueFilters['status'] | null;
+  return {
+    projectId: projectParam,
+    assigneeId: assignee ?? undefined,
+    status: status ?? undefined,
+  };
 }

@@ -27,6 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -113,7 +114,6 @@ export function GlobalTopNav() {
     : [];
 
   const isInProjectArea = pathname.startsWith('/projects');
-  const isInProjectsList = pathname === '/projects';
   const isInIssues = pathname.startsWith('/issues');
   const isInTeams = pathname.startsWith('/people');
   const isInYourWork = pathname === '/';
@@ -136,24 +136,26 @@ export function GlobalTopNav() {
             }
           />
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Your apps
-            </DropdownMenuLabel>
-            <DropdownMenuItem className="gap-2 cursor-pointer" disabled>
-              <span className="flex h-6 w-6 items-center justify-center rounded bg-primary text-[10px] font-bold text-primary-foreground">J</span>
-              Jupiter
-              <Badge variant="secondary" className="ml-auto text-[9px]">Active</Badge>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 cursor-pointer" disabled>
-              <span className="flex h-6 w-6 items-center justify-center rounded bg-emerald-600 text-[10px] font-bold text-white">C</span>
-              Confluence
-              <Badge variant="outline" className="ml-auto text-[9px]">Soon</Badge>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 cursor-pointer" disabled>
-              <span className="flex h-6 w-6 items-center justify-center rounded bg-violet-600 text-[10px] font-bold text-white">B</span>
-              Bitbucket
-              <Badge variant="outline" className="ml-auto text-[9px]">Soon</Badge>
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Your apps
+              </DropdownMenuLabel>
+              <DropdownMenuItem className="gap-2 cursor-pointer" disabled>
+                <span className="flex h-6 w-6 items-center justify-center rounded bg-primary text-[10px] font-bold text-primary-foreground">J</span>
+                Jupiter
+                <Badge variant="secondary" className="ml-auto text-[9px]">Active</Badge>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="gap-2 cursor-pointer" disabled>
+                <span className="flex h-6 w-6 items-center justify-center rounded bg-emerald-600 text-[10px] font-bold text-white">C</span>
+                Confluence
+                <Badge variant="outline" className="ml-auto text-[9px]">Soon</Badge>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="gap-2 cursor-pointer" disabled>
+                <span className="flex h-6 w-6 items-center justify-center rounded bg-violet-600 text-[10px] font-bold text-white">B</span>
+                Bitbucket
+                <Badge variant="outline" className="ml-auto text-[9px]">Soon</Badge>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -168,39 +170,43 @@ export function GlobalTopNav() {
         {/* Product nav (dropdown menus, like real Jira) */}
         <nav className="ml-1 hidden items-center md:flex">
           <NavMenu label="Your work" active={isInYourWork}>
-            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Worked on
-            </DropdownMenuLabel>
-            {recentlyUpdated.length === 0 && (
-              <p className="px-2 py-3 text-xs text-muted-foreground">No recent activity</p>
-            )}
-            {recentlyUpdated.map((i) => (
-              <DropdownMenuItem
-                key={i.id}
-                onClick={() => setOpenIssueId(i.id)}
-                className="cursor-pointer"
-              >
-                <IssueTypeIcon type={i.type} />
-                <span className="font-mono text-xs text-muted-foreground">{i.key}</span>
-                <span className="flex-1 truncate text-xs">{i.summary}</span>
-                <span className="text-[10px] text-muted-foreground">{timeAgo(i.updatedAt)}</span>
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Assigned to me
-            </DropdownMenuLabel>
-            {myAssigned.length === 0 ? (
-              <p className="px-2 py-3 text-xs text-muted-foreground">Nothing assigned</p>
-            ) : (
-              myAssigned.slice(0, 3).map((i) => (
-                <DropdownMenuItem key={i.id} onClick={() => setOpenIssueId(i.id)} className="cursor-pointer">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Worked on
+              </DropdownMenuLabel>
+              {recentlyUpdated.length === 0 && (
+                <p className="px-2 py-3 text-xs text-muted-foreground">No recent activity</p>
+              )}
+              {recentlyUpdated.map((i) => (
+                <DropdownMenuItem
+                  key={i.id}
+                  onClick={() => setOpenIssueId(i.id)}
+                  className="cursor-pointer"
+                >
                   <IssueTypeIcon type={i.type} />
                   <span className="font-mono text-xs text-muted-foreground">{i.key}</span>
                   <span className="flex-1 truncate text-xs">{i.summary}</span>
+                  <span className="text-[10px] text-muted-foreground">{timeAgo(i.updatedAt)}</span>
                 </DropdownMenuItem>
-              ))
-            )}
+              ))}
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Assigned to me
+              </DropdownMenuLabel>
+              {myAssigned.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground">Nothing assigned</p>
+              ) : (
+                myAssigned.slice(0, 3).map((i) => (
+                  <DropdownMenuItem key={i.id} onClick={() => setOpenIssueId(i.id)} className="cursor-pointer">
+                    <IssueTypeIcon type={i.type} />
+                    <span className="font-mono text-xs text-muted-foreground">{i.key}</span>
+                    <span className="flex-1 truncate text-xs">{i.summary}</span>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer" render={<Link href="/" />}>
               <ArrowRight className="h-3.5 w-3.5" /> Go to Your work
@@ -208,21 +214,23 @@ export function GlobalTopNav() {
           </NavMenu>
 
           <NavMenu label="Projects" active={isInProjectArea}>
-            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Recent projects
-            </DropdownMenuLabel>
-            {projects.slice(0, 6).map((p) => (
-              <DropdownMenuItem
-                key={p.id}
-                className="cursor-pointer"
-                render={<Link href={`/projects/${p.key}`} />}
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-[9px] font-bold text-primary">
-                  {p.key.slice(0, 3)}
-                </span>
-                <span className="flex-1 truncate">{p.name}</span>
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Recent projects
+              </DropdownMenuLabel>
+              {projects.slice(0, 6).map((p) => (
+                <DropdownMenuItem
+                  key={p.id}
+                  className="cursor-pointer"
+                  render={<Link href={`/projects/${p.key}`} />}
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-[9px] font-bold text-primary">
+                    {p.key.slice(0, 3)}
+                  </span>
+                  <span className="flex-1 truncate">{p.name}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer" render={<Link href="/projects" />}>
               <FolderKanban className="h-3.5 w-3.5" /> View all projects
@@ -230,37 +238,39 @@ export function GlobalTopNav() {
           </NavMenu>
 
           <NavMenu label="Filters" active={isInIssues}>
-            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Saved filters
-            </DropdownMenuLabel>
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => router.push('/issues?assignee=me')}
-            >
-              <Star className="h-3.5 w-3.5 text-yellow-500" />
-              Assigned to me
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => router.push('/issues?status=in-progress')}
-            >
-              <Clock className="h-3.5 w-3.5" />
-              In progress
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => router.push('/issues')}
-            >
-              <ListChecks className="h-3.5 w-3.5" />
-              All issues
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Saved filters
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.push('/issues?assignee=me')}
+              >
+                <Star className="h-3.5 w-3.5 text-yellow-500" />
+                Assigned to me
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.push('/issues?status=in-progress')}
+              >
+                <Clock className="h-3.5 w-3.5" />
+                In progress
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.push('/issues')}
+              >
+                <ListChecks className="h-3.5 w-3.5" />
+                All issues
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer" render={<Link href="/issues" />}>
               <FilterIcon className="h-3.5 w-3.5" /> Advanced search
             </DropdownMenuItem>
           </NavMenu>
 
-          <NavLink href="/people" active={isInTeams && !isInProjectsList}>
+          <NavLink href="/people" active={isInTeams}>
             <Users className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
             Teams
           </NavLink>
@@ -383,18 +393,20 @@ export function GlobalTopNav() {
               }
             />
             <DropdownMenuContent align="end" className="w-80">
-              <div className="flex items-center justify-between px-2 py-1.5">
-                <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
-                {unreadCount > 0 && (
-                  <button
-                    type="button"
-                    className="text-[11px] text-primary hover:underline cursor-pointer"
-                    onClick={() => markAllRead(user.id, notifications.map((n) => n.activity.id))}
-                  >
-                    Mark all read
-                  </button>
-                )}
-              </div>
+              <DropdownMenuGroup>
+                <div className="flex items-center justify-between px-2 py-1.5">
+                  <DropdownMenuLabel className="p-0">Notifications</DropdownMenuLabel>
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      className="text-[11px] text-primary hover:underline cursor-pointer"
+                      onClick={() => markAllRead(user.id, notifications.map((n) => n.activity.id))}
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
               {notifications.length === 0 ? (
                 <DropdownMenuItem className="gap-2 cursor-default" disabled>
@@ -454,22 +466,24 @@ export function GlobalTopNav() {
               }
             />
             <DropdownMenuContent align="end" className="w-60">
-              <DropdownMenuLabel>
-                <div className="flex items-center gap-3 py-1">
-                  <UserAvatar
-                    member={{
-                      id: user.id, name: user.name, username: user.username,
-                      email: user.email, avatarColor: user.avatarColor, title: user.title,
-                    }}
-                    size="md"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{user.name}</p>
-                    <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
-                    <p className="text-[10px] text-muted-foreground">{ROLE_LABELS[user.role]}</p>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>
+                  <div className="flex items-center gap-3 py-1">
+                    <UserAvatar
+                      member={{
+                        id: user.id, name: user.name, username: user.username,
+                        email: user.email, avatarColor: user.avatarColor, title: user.title,
+                      }}
+                      size="md"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{user.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+                      <p className="text-[10px] text-muted-foreground">{ROLE_LABELS[user.role]}</p>
+                    </div>
                   </div>
-                </div>
-              </DropdownMenuLabel>
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="cursor-pointer" render={<Link href="/settings" />}>
                 <SettingsIcon className="h-3.5 w-3.5" /> Settings
