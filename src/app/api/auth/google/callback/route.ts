@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { completeGoogleCallback } from '@/server/auth/google';
-import { isGoogleAuthEnabled, getAppUrl } from '@/server/auth/config';
+import { isGoogleAuthEnabled, getAppUrlAsync } from '@/server/auth/config';
 
 export async function GET(request: Request) {
-  if (!isGoogleAuthEnabled()) {
-    return NextResponse.redirect(`${getAppUrl()}/login?error=google_disabled`);
+  const appUrl = await getAppUrlAsync();
+  if (!(await isGoogleAuthEnabled())) {
+    return NextResponse.redirect(`${appUrl}/login?error=google_disabled`);
   }
 
   const url = new URL(request.url);
@@ -13,13 +14,13 @@ export async function GET(request: Request) {
   const oauthError = url.searchParams.get('error');
 
   if (oauthError || !code || !state) {
-    return NextResponse.redirect(`${getAppUrl()}/login?error=google_auth_failed`);
+    return NextResponse.redirect(`${appUrl}/login?error=google_auth_failed`);
   }
 
   const result = await completeGoogleCallback(request, code, state);
   if (!result.ok) {
-    return NextResponse.redirect(`${getAppUrl()}/login?error=${result.reason}`);
+    return NextResponse.redirect(`${appUrl}/login?error=${result.reason}`);
   }
 
-  return NextResponse.redirect(`${getAppUrl()}${result.redirectTo}`);
+  return NextResponse.redirect(`${appUrl}${result.redirectTo}`);
 }

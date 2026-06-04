@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { AlertCircle } from 'lucide-react';
 import { AuthShell } from '@/components/auth/auth-shell';
-import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
+import { SocialSignInButtons } from '@/components/auth/social-sign-in-buttons';
 import { registerViaApi } from '@/lib/auth-api';
 
 export default function SignUpPage() {
@@ -40,7 +40,7 @@ export default function SignUpPage() {
   return (
     <AuthShell title="Create your account" subtitle="Sign up with your work email.">
       <Suspense fallback={null}>
-        <GoogleSignInButton />
+        <SocialSignInButtons />
       </Suspense>
 
       {message ? (

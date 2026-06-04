@@ -12,6 +12,11 @@ import { useIssuesStore } from '@/lib/issues-store';
 import { useThemeStore } from '@/lib/theme-store';
 import { hasPermission, ROLE_LABELS, getPermissionsForRole } from '@/lib/permissions';
 import { ConnectedAccountsCard } from '@/components/auth/connected-accounts-card';
+import { SetPasswordCard } from '@/components/auth/set-password-card';
+import { SessionsCard } from '@/components/auth/sessions-card';
+import { ApiTokensCard } from '@/components/auth/api-tokens-card';
+import { TwoFactorCard } from '@/components/auth/two-factor-card';
+import { AuthenticationSettingsCard } from '@/components/auth/authentication-settings-card';
 
 export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
@@ -24,6 +29,7 @@ export default function SettingsPage() {
   const [reseeding, setReseeding] = useState(false);
 
   const canEdit = hasPermission(user?.role, 'settings.edit');
+  const isAdmin = user?.role === 'admin';
 
   const reseed = () => {
     if (!confirm('Reset all projects and issues to demo data? Local changes will be lost.')) return;
@@ -69,7 +75,17 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
+          {isAdmin ? <AuthenticationSettingsCard /> : null}
+
+          <SetPasswordCard />
+
           <ConnectedAccountsCard />
+
+          <SessionsCard />
+
+          <ApiTokensCard />
+
+          <TwoFactorCard />
 
           <Card>
             <CardHeader>

@@ -27,3 +27,29 @@ export const resetPasswordBodySchema = z.object({
 export const resendVerificationBodySchema = z.object({
   email: emailSchema,
 });
+
+export const totpCodeSchema = z.string().regex(/^\d{6}$/, 'Enter a 6-digit code');
+
+export const totpEnableBodySchema = z.object({
+  code: totpCodeSchema,
+});
+
+export const totpChallengeBodySchema = z.object({
+  code: totpCodeSchema.optional(),
+  backupCode: z.string().min(8).max(32).optional(),
+}).refine((d) => Boolean(d.code || d.backupCode), {
+  message: 'Code or backup code is required',
+});
+
+export const totpDisableBodySchema = z.object({
+  password: z.string().min(1).max(128),
+  code: totpCodeSchema.optional(),
+  backupCode: z.string().min(8).max(32).optional(),
+}).refine((d) => Boolean(d.code || d.backupCode), {
+  message: 'TOTP code or backup code is required',
+});
+
+export const totpRegenerateBodySchema = z.object({
+  password: z.string().min(1).max(128),
+  code: totpCodeSchema,
+});

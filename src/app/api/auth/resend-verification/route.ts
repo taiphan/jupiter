@@ -1,6 +1,6 @@
 import { findUserByEmail } from '@/server/auth/users';
 import { issueAuthToken } from '@/server/auth/tokens';
-import { sendAuthEmail } from '@/server/auth/mailer';
+import { sendAuthEmail, MailDeliveryError } from '@/server/auth/mailer';
 import { json, error, requireDb } from '@/server/api-helpers';
 import { resendVerificationBodySchema } from '@/server/auth/schemas';
 import { checkRateLimit, clientIp } from '@/server/auth/rate-limit';
@@ -21,7 +21,14 @@ export async function POST(request: Request) {
   const user = await findUserByEmail(parsed.data.email);
   if (user && !user.emailVerifiedAt) {
     const token = await issueAuthToken(user.id, 'verify_email');
-    await sendAuthEmail(user.email, 'verify_email', token);
+    try {
+      await sendAuthEmail(user.email, 'verify_email', token);
+    } catch (e) {
+      if (e instanceof MailDeliveryError) {
+        return error('Could not send verification email. Try again later.', 503);
+      }
+      throw e;
+    }
   }
 
   return json({ message: 'If an unverified account exists, we sent a new link.' });

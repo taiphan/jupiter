@@ -26,8 +26,27 @@ export const users = pgTable('users', {
   avatarColor: text('avatar_color').notNull().default('#0C66E4'),
   title: text('title').notNull().default(''),
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+  /** AES-256-GCM encrypted TOTP secret; set when 2FA is enabled */
+  totpSecret: text('totp_secret'),
+  /** Pending enrollment secret (encrypted) until user confirms with a code */
+  totpPendingSecret: text('totp_pending_secret'),
+  totpEnabledAt: timestamp('totp_enabled_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const totpBackupCodes = pgTable(
+  'totp_backup_codes',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    codeHash: text('code_hash').notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('totp_backup_codes_user_idx').on(t.userId)],
+);
 
 export const authTokens = pgTable(
   'auth_tokens',
@@ -51,7 +70,7 @@ export const oauthAccounts = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    provider: text('provider').notNull().$type<'google'>(),
+    provider: text('provider').notNull().$type<'google' | 'microsoft' | 'github'>(),
     providerAccountId: text('provider_account_id').notNull(),
     emailAtLink: text('email_at_link').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -59,14 +78,64 @@ export const oauthAccounts = pgTable(
   (t) => [uniqueIndex('oauth_provider_account').on(t.provider, t.providerAccountId)],
 );
 
+// ─── Workspace auth configuration (admin UI; secrets encrypted) ───────────
+
+export const workspaceAuthConfig = pgTable('workspace_auth_config', {
+  id: text('id').primaryKey(),
+  appUrl: text('app_url').notNull().default('http://localhost:3100'),
+  emailProvider: text('email_provider').notNull().$type<'console' | 'gmail' | 'smtp'>().default('console'),
+  smtpHost: text('smtp_host').notNull().default('smtp.gmail.com'),
+  smtpPort: integer('smtp_port').notNull().default(587),
+  smtpSecure: boolean('smtp_secure').notNull().default(false),
+  smtpUser: text('smtp_user').notNull().default(''),
+  smtpPassEncrypted: text('smtp_pass_encrypted'),
+  emailFrom: text('email_from').notNull().default('taiphantuan@gmail.com'),
+  /** Redirect all auth emails to this inbox (dev/testing). Empty = send to real recipient. */
+  mailRedirectTo: text('mail_redirect_to').notNull().default('taiphantuan@gmail.com'),
+  testEmailTo: text('test_email_to').notNull().default('taiphantuan@gmail.com'),
+  googleAuthEnabled: boolean('google_auth_enabled').notNull().default(false),
+  googleClientId: text('google_client_id').notNull().default(''),
+  googleClientSecretEncrypted: text('google_client_secret_encrypted'),
+  googleAllowedHd: text('google_allowed_hd').notNull().default(''),
+  twoFactorEnabled: boolean('two_factor_enabled').notNull().default(true),
+  microsoftAuthEnabled: boolean('microsoft_auth_enabled').notNull().default(false),
+  microsoftClientId: text('microsoft_client_id').notNull().default(''),
+  microsoftClientSecretEncrypted: text('microsoft_client_secret_encrypted'),
+  microsoftTenantId: text('microsoft_tenant_id').notNull().default('common'),
+  githubAuthEnabled: boolean('github_auth_enabled').notNull().default(false),
+  githubClientId: text('github_client_id').notNull().default(''),
+  githubClientSecretEncrypted: text('github_client_secret_encrypted'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ─── Sessions ───────────────────────────────────────────────────────────────
 
 export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  userAgent: text('user_agent'),
+  ipAddress: text('ip_address'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const apiTokens = pgTable(
+  'api_tokens',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    tokenPrefix: text('token_prefix').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    scopes: jsonb('scopes').notNull().$type<string[]>().default(['workspace:read']),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('api_tokens_user_idx').on(t.userId)],
+);
 
 // ─── Projects ───────────────────────────────────────────────────────────────
 

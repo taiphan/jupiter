@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { getDb, isDbConfigured } from '@/server/db/client';
 import { getCurrentUser } from '@/server/auth/session';
+import { authenticateBearerToken } from '@/server/auth/api-tokens';
 import { hasPermission, type Permission } from '@/lib/permissions';
 import type { DbUser } from '@/server/db/schema';
 
@@ -23,11 +25,16 @@ export function requireDb() {
   return null;
 }
 
-/** Returns the authenticated user or a 401 response. */
+/** Returns the authenticated user (session cookie or Bearer PAT) or a 401 response. */
 export async function requireUser(): Promise<DbUser | NextResponse> {
   const user = await getCurrentUser();
-  if (!user) return error('Not authenticated', 401);
-  return user;
+  if (user) return user;
+
+  const hdrs = await headers();
+  const bearerUser = await authenticateBearerToken(hdrs.get('authorization'));
+  if (bearerUser) return bearerUser;
+
+  return error('Not authenticated', 401);
 }
 
 export function requirePermission(user: DbUser, permission: Permission): NextResponse | null {

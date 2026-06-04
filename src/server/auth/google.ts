@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { eq, and } from 'drizzle-orm';
 import { getDb, schema } from '@/server/db/client';
-import { getAppUrl, isGoogleAuthEnabled } from './config';
+import { getAuthSettings } from './auth-settings';
 import { normalizeEmail, usernameFromEmail } from './email-normalize';
 import { createSession } from './session';
 import { markEmailVerified } from './users';
@@ -25,23 +25,24 @@ function pkceChallenge(verifier: string): string {
   return base64Url(createHash('sha256').update(verifier).digest());
 }
 
-export function assertGoogleEnabled(): void {
-  if (!isGoogleAuthEnabled()) {
+export async function assertGoogleEnabled(): Promise<void> {
+  const s = await getAuthSettings();
+  if (!s.googleAuthEnabled || !s.googleClientId || !s.googleClientSecret) {
     throw new Error('Google auth is not enabled');
   }
 }
 
-function isAllowedWorkspaceDomain(hd: string | undefined): boolean {
-  const allowed = process.env.GOOGLE_ALLOWED_HD?.trim().toLowerCase();
-  if (!allowed) return true;
-  return hd?.toLowerCase() === allowed;
+function isAllowedWorkspaceDomain(hd: string | undefined, allowedHd: string | null): boolean {
+  if (!allowedHd) return true;
+  return hd?.toLowerCase() === allowedHd.toLowerCase();
 }
 
 export async function startGoogleSignIn(
   request: Request,
   redirectAfter?: string | null,
 ): Promise<string> {
-  assertGoogleEnabled();
+  await assertGoogleEnabled();
+  const settings = await getAuthSettings();
 
   const ip = clientIp(request);
   const limit = checkRateLimit(`google:start:${ip}`, 10, 15 * 60 * 1000);
@@ -49,11 +50,11 @@ export async function startGoogleSignIn(
     throw new Error('rate_limited');
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID!;
+  const clientId = settings.googleClientId;
   const state = base64Url(randomBytes(24));
   const verifier = base64Url(randomBytes(32));
   const challenge = pkceChallenge(verifier);
-  const redirectUri = `${getAppUrl()}/api/auth/google/callback`;
+  const redirectUri = `${settings.appUrl}/api/auth/google/callback`;
   const safeRedirect = sanitizePostAuthRedirect(redirectAfter);
 
   const jar = await cookies();
@@ -80,9 +81,8 @@ export async function startGoogleSignIn(
     prompt: 'select_account',
   });
 
-  const allowedHd = process.env.GOOGLE_ALLOWED_HD?.trim();
-  if (allowedHd) {
-    params.set('hd', allowedHd);
+  if (settings.googleAllowedHd) {
+    params.set('hd', settings.googleAllowedHd);
   }
 
   return `${GOOGLE_AUTH}?${params.toString()}`;
@@ -105,7 +105,8 @@ export async function completeGoogleCallback(
   | { ok: true; userId: string; redirectTo: string }
   | { ok: false; reason: string }
 > {
-  assertGoogleEnabled();
+  await assertGoogleEnabled();
+  const settings = await getAuthSettings();
 
   const ip = clientIp(request);
   const limit = checkRateLimit(`google:callback:${ip}`, 10, 15 * 60 * 1000);
@@ -125,13 +126,13 @@ export async function completeGoogleCallback(
     return { ok: false, reason: 'invalid_state' };
   }
 
-  const redirectUri = `${getAppUrl()}/api/auth/google/callback`;
+  const redirectUri = `${settings.appUrl}/api/auth/google/callback`;
   const tokenRes = await fetch(GOOGLE_TOKEN, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      client_id: settings.googleClientId,
+      client_secret: settings.googleClientSecret!,
       code,
       grant_type: 'authorization_code',
       redirect_uri: redirectUri,
@@ -159,7 +160,7 @@ export async function completeGoogleCallback(
   if (!profile.email_verified) {
     return { ok: false, reason: 'email_not_verified' };
   }
-  if (!isAllowedWorkspaceDomain(profile.hd)) {
+  if (!isAllowedWorkspaceDomain(profile.hd, settings.googleAllowedHd)) {
     return { ok: false, reason: 'domain_not_allowed' };
   }
 
@@ -168,7 +169,7 @@ export async function completeGoogleCallback(
 
   const email = normalizeEmail(profile.email);
   const userId = await linkOrCreateGoogleUser(db, profile, email);
-  await createSession(userId);
+  await createSession(userId, request);
   return { ok: true, userId, redirectTo };
 }
 
@@ -263,33 +264,9 @@ export async function getGoogleLinkForUser(userId: string) {
   return rows[0] ?? null;
 }
 
-export async function disconnectGoogle(userId: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  const db = getDb();
-  if (!db) return { ok: false, error: 'Database not configured' };
-
-  const userRows = await db
-    .select()
-    .from(schema.users)
-    .where(eq(schema.users.id, userId))
-    .limit(1);
-  const user = userRows[0];
-  if (!user) return { ok: false, error: 'User not found' };
-
-  const link = await getGoogleLinkForUser(userId);
-  if (!link) return { ok: false, error: 'Google account is not connected' };
-
-  if (!user.passwordHash) {
-    return {
-      ok: false,
-      error: 'Set a password before disconnecting Google (only sign-in method).',
-    };
-  }
-
-  await db
-    .delete(schema.oauthAccounts)
-    .where(
-      and(eq(schema.oauthAccounts.userId, userId), eq(schema.oauthAccounts.provider, 'google')),
-    );
-
-  return { ok: true };
+export async function disconnectGoogle(
+  userId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { disconnectOAuth } = await import('./oauth/disconnect');
+  return disconnectOAuth(userId, 'google');
 }

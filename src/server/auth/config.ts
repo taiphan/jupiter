@@ -1,8 +1,5 @@
 import { resolveAppUrl, resolveDatabaseUrl } from '@/server/env';
-
-export function getAppUrl(): string {
-  return resolveAppUrl();
-}
+import { getAuthSettings } from './auth-settings';
 
 export function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET ?? resolveDatabaseUrl();
@@ -12,14 +9,45 @@ export function getAuthSecret(): string {
   return secret ?? 'jupiter-dev-auth-secret';
 }
 
-export function isGoogleAuthEnabled(): boolean {
+/** @deprecated sync fallback — prefer getAppUrlAsync */
+export function getAppUrl(): string {
+  return resolveAppUrl();
+}
+
+export async function getAppUrlAsync(): Promise<string> {
+  return (await getAuthSettings()).appUrl;
+}
+
+export async function isGoogleAuthEnabled(): Promise<boolean> {
+  const s = await getAuthSettings();
   return (
-    process.env.AUTH_GOOGLE_ENABLED === 'true' &&
-    Boolean(process.env.GOOGLE_CLIENT_ID) &&
-    Boolean(process.env.GOOGLE_CLIENT_SECRET)
+    s.googleAuthEnabled &&
+    Boolean(s.googleClientId) &&
+    Boolean(s.googleClientSecret)
   );
 }
 
-export function getGoogleClientId(): string | undefined {
-  return process.env.GOOGLE_CLIENT_ID;
+export async function getGoogleClientId(): Promise<string | undefined> {
+  const id = (await getAuthSettings()).googleClientId;
+  return id || undefined;
+}
+
+export async function isTwoFactorEnabled(): Promise<boolean> {
+  return (await getAuthSettings()).twoFactorEnabled;
+}
+
+export async function isMicrosoftAuthEnabled(): Promise<boolean> {
+  const s = await getAuthSettings();
+  return (
+    s.microsoftAuthEnabled &&
+    Boolean(s.microsoftClientId) &&
+    Boolean(s.microsoftClientSecret)
+  );
+}
+
+export async function isGitHubAuthEnabled(): Promise<boolean> {
+  const s = await getAuthSettings();
+  return (
+    s.githubAuthEnabled && Boolean(s.githubClientId) && Boolean(s.githubClientSecret)
+  );
 }

@@ -40,7 +40,10 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   hydrateSession: () => Promise<void>;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<{ success: boolean; error?: string; requires2fa?: boolean }>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
 }
@@ -67,11 +70,14 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (email, password) => {
         const api = await loginViaApi(email, password);
-        if (api.ok) {
+        if (api.ok && 'requires2fa' in api && api.requires2fa) {
+          return { success: true, requires2fa: true };
+        }
+        if (api.ok && 'user' in api) {
           set({ user: api.user, isAuthenticated: true });
           return { success: true };
         }
-        if (!('unavailable' in api)) {
+        if (!('unavailable' in api) && !api.ok) {
           return { success: false, error: api.error };
         }
 

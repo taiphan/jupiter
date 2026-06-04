@@ -1,21 +1,40 @@
 import { getCurrentUserAllowUnverified } from '@/server/auth/session';
 import { json, requireDb } from '@/server/api-helpers';
 import { toPublicUser } from '@/server/auth/user-mapper';
-import { getGoogleLinkForUser } from '@/server/auth/google';
-import { isGoogleAuthEnabled } from '@/server/auth/config';
+import { isGoogleAuthEnabled, isGitHubAuthEnabled, isMicrosoftAuthEnabled, isTwoFactorEnabled } from '@/server/auth/config';
+import { userHas2faEnabled } from '@/server/auth/totp';
+import { listOAuthProvidersForUser } from '@/server/auth/oauth/disconnect';
 
 export async function GET() {
   const dbError = requireDb();
   if (dbError) return dbError;
 
   const user = await getCurrentUserAllowUnverified();
-  if (!user) return json({ user: null, googleConnected: false, googleAuthAvailable: false });
+  if (!user) {
+    return json({
+      user: null,
+      oauthConnected: [],
+      hasPassword: false,
+      googleConnected: false,
+      googleAuthAvailable: false,
+      microsoftAuthAvailable: false,
+      githubAuthAvailable: false,
+      totpEnabled: false,
+      twoFactorAuthAvailable: await isTwoFactorEnabled(),
+    });
+  }
 
-  const googleLink = await getGoogleLinkForUser(user.id);
+  const oauthConnected = await listOAuthProvidersForUser(user.id);
 
   return json({
     user: toPublicUser(user),
-    googleConnected: Boolean(googleLink),
-    googleAuthAvailable: isGoogleAuthEnabled(),
+    oauthConnected,
+    hasPassword: Boolean(user.passwordHash),
+    googleConnected: oauthConnected.includes('google'),
+    googleAuthAvailable: await isGoogleAuthEnabled(),
+    microsoftAuthAvailable: await isMicrosoftAuthEnabled(),
+    githubAuthAvailable: await isGitHubAuthEnabled(),
+    totpEnabled: userHas2faEnabled(user),
+    twoFactorAuthAvailable: await isTwoFactorEnabled(),
   });
 }

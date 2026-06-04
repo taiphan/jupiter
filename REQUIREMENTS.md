@@ -99,23 +99,71 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 
 ## 7. Authentication & identity
 
+Aligned with **SaaS breadth** (GitHub, Linear) and **enterprise** expectations (Jira Cloud, Atlassian Guard: SAML, SCIM, enforced 2FA).
+
+### 7.1 Core (shipped)
+
 | Capability | Jupiter | Status | Notes |
 |------------|---------|--------|-------|
 | **Email + password sign-in** | `/api/auth/login` | ✅ | Email is primary identifier |
-| Email verification on sign-up | `/api/auth/register`, `/verify` | ✅ | Console/SMTP mailer |
-| Password reset via email | `/forgot-password`, `/reset-password` | ✅ | Single-use tokens |
+| Email verification on sign-up | `/api/auth/register`, `/verify` | ✅ | Gmail SMTP when `EMAIL_PROVIDER=gmail`; console default |
+| Password reset via email | `/forgot-password`, `/reset-password` | ✅ | Same mail pipeline as verify |
 | Server-side sessions (cookies) | `/api/auth/me`, `/logout` | ✅ | HTTP-only `jupiter_session` |
-| **Google Sign-In (OAuth 2.0)** | `/api/auth/google` | ✅ | PKCE; enable via env |
-| Postgres users & sessions | Drizzle + Docker | ✅ | `npm run db:setup` |
-| Rate limiting on auth | In-memory per IP | ✅ | Login, register, reset |
-| SSO / SAML (enterprise) | — | ⬜ | Post v1.7 |
-| Microsoft / Apple social login | — | ⬜ | Post v1.7 |
-| MFA | — | — | Out of scope |
+| **Google Sign-In (OAuth 2.0 + PKCE)** | `/api/auth/google` | ✅ | Link/unlink; optional `GOOGLE_ALLOWED_HD` |
+| Postgres users, sessions, OAuth | Drizzle | ✅ | `users`, `sessions`, `oauth_accounts`, `auth_tokens` |
+| Rate limiting on auth | In-memory per IP | ✅ | Login, register, reset, OAuth |
+| Roles (RBAC) | admin / lead / member / viewer | ✅ | Same for all login methods |
+| Local demo mode (no DB) | `auth-store` + seed accounts | ✅ | Dev only |
 
-**Specs:** [v1.6 email auth](./docs/v1.6-auth-requirements.md) · [v1.7 Google Sign-In](./docs/v1.7-google-sign-in-requirements.md)  
-**Tasks:** [v1.6](./tasks/v1.6-auth-todo.md) · [v1.7 Google](./tasks/v1.7-google-sign-in-todo.md)
+### 7.2 Security & delivery (v1.10) ✅
 
-**v1.6 target:** standard **email authorization** — register, verify email, sign in with email + password, reset password; demo seed uses `*@acme.dev` addresses in Docker.
+| Capability | Status | Notes |
+|------------|--------|-------|
+| Gmail / SMTP verify & reset email | ✅ | `nodemailer`; env or admin Settings |
+| **TOTP 2FA** (authenticator apps) | ✅ | `/api/auth/2fa/*`; Settings + `/login/2fa` |
+| **Admin auth settings UI** | ✅ | SMTP, Google, app URL; `workspace_auth_config` |
+| Google OAuth + 2FA step-up | ⬜ stretch | Password login + 2FA shipped first |
+
+### 7.3 Breadth (v1.11)
+
+| Capability | Status | Notes |
+|------------|--------|-------|
+| **Microsoft** (Entra ID) OAuth | ⬜ | Same pattern as Google |
+| **GitHub** OAuth | ⬜ | |
+| **Apple** Sign In | ⬜ stretch | |
+| Add password for OAuth-only users | ⬜ | Settings → Security |
+| Sign out all devices / session list | ⬜ | Revoke sessions API + UI |
+| **Personal access tokens** (PAT) | ⬜ | Bearer `jpt_…` for API/CI |
+| CAPTCHA on auth (Turnstile/hCaptcha) | ⬜ stretch | After repeated failures |
+| Breached-password check (HIBP) | ⬜ stretch | Register + password change |
+| Per-user security activity log | ⬜ stretch | Login/OAuth/PAT events |
+
+### 7.4 Enterprise (v2.0)
+
+| Capability | Status | Notes |
+|------------|--------|-------|
+| **SAML 2.0 SSO** (SP) | ⬜ | Okta, Azure AD, Google Workspace SAML |
+| **OIDC** federation (per org) | ⬜ | Alternative to SAML |
+| **SCIM 2.0** provisioning | ⬜ | User/group sync from IdP |
+| Organization + **enforce SSO** | ⬜ | Disable password/social when policy on |
+| Org **require 2FA** policy | ⬜ | Block app until TOTP enrolled |
+| **Invite-only** / email domain allowlist | ⬜ | `org_invites`, `allowed_email_domains` |
+| **Auth audit log** (admin) | ⬜ | `auth_events` — login, SSO, 2FA, PAT |
+| Break-glass admin login | ⬜ | Env allowlist when SSO enforced |
+| WebAuthn / passkeys | ⬜ | **v2.1** stretch |
+
+### 7.5 Out of scope (current)
+
+| Capability | Notes |
+|------------|-------|
+| SMS / voice OTP | Use TOTP only |
+| Magic-link-only passwordless | Non-goal |
+| Multi-tenant billing / Atlassian Guard seats | — |
+| Data residency regions | — |
+| On-prem clustering | — |
+
+**Specs:** [v1.6](./docs/v1.6-auth-requirements.md) · [v1.7](./docs/v1.7-google-sign-in-requirements.md) · [v1.10](./docs/v1.10-auth-security-requirements.md) · **[v1.11 + v2.0 enterprise & breadth](./docs/v2.0-auth-enterprise-breadth-requirements.md)**  
+**Tasks:** [v1.6](./tasks/v1.6-auth-todo.md) · [v1.7](./tasks/v1.7-google-sign-in-todo.md) · [v1.10](./tasks/v1.10-auth-security-todo.md) · **[v2.0 auth](./tasks/v2.0-auth-enterprise-breadth-todo.md)**
 
 ---
 
@@ -127,6 +175,7 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Project settings | Settings tab | ✅ | Name, key, lead, members |
 | Workflow editor (visual) | Status columns via board config | 🟡 | Column mapping only; no transition rules UI |
 | Audit log | `/audit` | 🟡 | Issue `activity` in Postgres via workspace sync; read via client store — **v1.8:** paginated API + optional workspace events |
+| **Authentication settings (admin)** | Settings → Authentication & email | ✅ | v1.10: SMTP, Google OAuth, 2FA flag, test email |
 | **Delegated permissions / templates** | — | ⬜ | Atlassian Spring 2026 |
 | **Beta feature toggles** | — | ⬜ | |
 | Data residency / compliance | — | — | Enterprise Jira only |
@@ -170,6 +219,10 @@ Atlassian’s 2026 direction ([Rovo in Jira](https://www.atlassian.com/software/
 | **v1.5** | List & calendar views, due dates, workflow rules, quick filters |
 | **v1.6** | Email authentication (register, verify, reset) |
 | **v1.7** | Google Sign-In (OAuth 2.0 + PKCE) |
+| **v1.8** | Workspace Postgres sync + persistence APIs |
+| **v1.10** | Gmail SMTP verification mail + TOTP 2FA ✅ |
+| **v1.11** | Auth breadth: Microsoft/GitHub OAuth, PAT, session revoke (planned) |
+| **v2.0** | Enterprise identity: SAML, OIDC, SCIM, org policy (planned) |
 
 ---
 
@@ -208,6 +261,29 @@ Priority order based on Atlassian core UX and Spring 2026 themes:
 
 Issue/project data continues via `/api/workspace` snapshot sync (shipped).
 
+### v1.10 — Gmail delivery & TOTP 2FA ✅
+
+**Spec:** [docs/v1.10-auth-security-requirements.md](./docs/v1.10-auth-security-requirements.md) · **Tasks:** [tasks/v1.10-auth-security-todo.md](./tasks/v1.10-auth-security-todo.md)
+
+| Area | Deliverable |
+|------|-------------|
+| **Verify / reset email** | `nodemailer` + `EMAIL_PROVIDER=gmail` (or `console` for dev) |
+| **2FA** | TOTP setup/enable/challenge/disable; backup codes; `/login/2fa` |
+
+> Use **SMTP to send** mail. IMAP is for reading inbox — not used in v1.10.
+
+### v1.11 — Auth breadth ⬜
+
+**Spec:** [docs/v2.0-auth-enterprise-breadth-requirements.md](./docs/v2.0-auth-enterprise-breadth-requirements.md) (Part A) · **Tasks:** [tasks/v2.0-auth-enterprise-breadth-todo.md](./tasks/v2.0-auth-enterprise-breadth-todo.md)
+
+| Area | Deliverable |
+|------|-------------|
+| **Social login** | Microsoft Entra, GitHub OAuth (+ Apple stretch) |
+| **Account** | Set password for OAuth-only users |
+| **Sessions** | List / revoke sessions; sign out everywhere |
+| **API** | Personal access tokens with scopes |
+| **Hardening** | CAPTCHA, HIBP (stretch) |
+
 ### v1.9 — Dashboards & polish
 - Customizable project dashboards (burndown, velocity, CFD widgets)
 - Enhanced For You page (what changed, what’s due)
@@ -215,13 +291,27 @@ Issue/project data continues via `/api/workspace` snapshot sync (shipped).
 - Watchers on issues
 - Email notification hooks (issue events, not auth)
 
-### v2.0 — Scale & collaboration
+### v2.0 — Scale, collaboration & enterprise identity ⬜
+
+**Auth spec (Part B):** [docs/v2.0-auth-enterprise-breadth-requirements.md](./docs/v2.0-auth-enterprise-breadth-requirements.md)
+
+| Area | Deliverable |
+|------|-------------|
+| **SAML 2.0 SSO** | SP metadata, login, ACS; JIT users |
+| **OIDC** | Per-org IdP; optional enforce SSO |
+| **SCIM 2.0** | User/group provision + deprovision |
+| **Org policy** | Require 2FA, email domain allowlist, invite-only |
+| **Auth audit** | Admin `auth_events` API |
+
+**Also v2.0 (product):**
+
 - Project templates (Scrum, Kanban, blank)
 - Guest/read-only external collaborators
 - Granular REST CRUD per resource (replace full snapshot PUT where needed)
-- Workspace domain lock for Google (`hd` claim) — optional
 
-### v2.1 — Automations & platform
+### v2.1 — Platform & passkeys (stretch)
+
+- WebAuthn / passkey sign-in
 - Rule builder (trigger → condition → action)
 - Webhooks
 - Integration stubs (GitHub PR linking)
@@ -242,4 +332,4 @@ Issue/project data continues via `/api/workspace` snapshot sync (shipped).
 
 ---
 
-*Last updated: June 2026 — aligned with Atlassian Jira Spring 2026 seasonal release themes.*
+*Last updated: June 2026 — auth §7 expanded for market breadth (v1.11) and enterprise (v2.0).*

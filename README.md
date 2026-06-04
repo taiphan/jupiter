@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.5-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.10-blue" alt="Version" />
   <img src="https://img.shields.io/badge/Next.js-16-black" alt="Next.js" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind-4-06b6d4" alt="Tailwind" />
@@ -18,9 +18,9 @@
 Jupiter mirrors core **Jira Software** workflows — projects, issues, boards, sprints, and reports — using Next.js 16, Tailwind v4, shadcn/ui, and Zustand persisted state with role-based access.
 
 Full feature mapping vs [Atlassian Jira](https://www.atlassian.com/software/jira/features): see **[REQUIREMENTS.md](./REQUIREMENTS.md)**.  
-**Next release:** [v1.5 requirements](./docs/v1.5-requirements.md) · [v1.5 tasks](./tasks/v1.5-todo.md)
+**Changelog:** [CHANGELOG.md](./CHANGELOG.md) · **Auth spec:** [v1.10](./docs/v1.10-auth-security-requirements.md)
 
-## Features (v1.5)
+## Features (v1.10)
 
 ### Plan & track
 - **Projects** — keys, leads, members, settings
@@ -50,11 +50,15 @@ Full feature mapping vs [Atlassian Jira](https://www.atlassian.com/software/jira
 
 ### Platform
 - **Role-based access** — admin / lead / member / viewer
-- **Auth** — email + password, verification, password reset; Google Sign-In (Docker + env)
+- **Auth** — email + password, verification, password reset; Google Sign-In (OAuth 2.0 + PKCE)
+- **TOTP 2FA** — authenticator app, backup codes, `/login/2fa` step
+- **Gmail SMTP** — production verify/reset mail (`EMAIL_PROVIDER=gmail` or admin Settings)
+- **Admin auth settings** — Settings → Authentication & email (SMTP, Google, app URL, test send)
+- **Workspace Postgres sync** — `/api/workspace`, notifications, audit, burndown APIs (v1.8)
 - **Light / dark theme** — Atlassian-style UI
 
 ### Planned next
-- **v1.8+** — dashboards, watchers, CSV export — see [REQUIREMENTS.md](./REQUIREMENTS.md#recommended-roadmap-jira-aligned)
+- **v1.11** — Microsoft/GitHub OAuth, PAT, session revoke — see [REQUIREMENTS.md](./REQUIREMENTS.md)
 
 ## Tech Stack
 
@@ -166,10 +170,22 @@ set -a && source .env.vercel.local && set +a
 npm run db:push:host && npm run db:seed:host
 ```
 
-3. Optional env in the Vercel dashboard:
-   - `APP_URL` — canonical site URL (OAuth redirects; defaults to `VERCEL_PROJECT_PRODUCTION_URL` when unset)
-   - `AUTH_SECRET` — session signing (defaults to the DB URL if unset)
-   - `AUTH_GOOGLE_ENABLED`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` for Google Sign-In
+3. Optional env in the Vercel dashboard (or configure in **Settings → Authentication & email** as admin):
+   - `APP_URL` — canonical site URL (OAuth redirects)
+   - `AUTH_SECRET` — session signing
+   - **Mail:** `EMAIL_PROVIDER=gmail`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM=taiphantuan@gmail.com`
+   - **Google:** `AUTH_GOOGLE_ENABLED`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+   - **2FA:** `AUTH_2FA_ENABLED=false` to disable
+
+After deploy:
+
+```bash
+npm run db:push:host && npm run db:seed:host
+```
+
+Demo admin (after seed): `taiphantuan@gmail.com` / `admin123`
+
+Integration test: `npm run test:auth` (requires `npm run dev` and `SMTP_PASS` for live mail).
 
 ## Project Structure
 

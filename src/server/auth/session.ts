@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { eq } from 'drizzle-orm';
 import { getDb, schema } from '@/server/db/client';
 import type { DbUser } from '@/server/db/schema';
+import { sessionMetaFromRequest } from './request-meta';
 
 export const SESSION_COOKIE = 'jupiter_session';
 const SESSION_TTL_DAYS = 30;
@@ -11,14 +12,26 @@ export function newSessionId(): string {
   return randomBytes(24).toString('hex');
 }
 
+export async function getCurrentSessionId(): Promise<string | null> {
+  const jar = await cookies();
+  return jar.get(SESSION_COOKIE)?.value ?? null;
+}
+
 /** Create a session row and set the cookie. */
-export async function createSession(userId: string): Promise<string> {
+export async function createSession(userId: string, request?: Request): Promise<string> {
   const db = getDb();
   if (!db) throw new Error('Database not configured');
 
   const id = newSessionId();
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
-  await db.insert(schema.sessions).values({ id, userId, expiresAt });
+  const meta = sessionMetaFromRequest(request);
+  await db.insert(schema.sessions).values({
+    id,
+    userId,
+    expiresAt,
+    userAgent: meta.userAgent,
+    ipAddress: meta.ipAddress,
+  });
 
   const jar = await cookies();
   jar.set(SESSION_COOKIE, id, {

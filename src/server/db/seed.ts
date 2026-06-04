@@ -8,6 +8,7 @@ import { DEMO_ACCOUNTS } from '@/lib/demo-users';
 import { hashPassword } from '@/server/auth/password';
 import { resolveDatabaseUrl } from '@/server/env';
 import * as schema from './schema';
+import { ensureAuthSettingsRow } from '@/server/auth/auth-settings';
 
 async function main() {
   const url = resolveDatabaseUrl();
@@ -18,6 +19,8 @@ async function main() {
 
   const client = postgres(url, { max: 1 });
   const db = drizzle(client, { schema });
+
+  await ensureAuthSettingsRow();
 
   for (const { user, password } of DEMO_ACCOUNTS) {
     const passwordHash = await hashPassword(password);

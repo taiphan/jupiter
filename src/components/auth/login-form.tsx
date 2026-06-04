@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
@@ -10,10 +11,11 @@ import { fetchAuthConfig } from '@/lib/auth-api';
 import { ROLE_LABELS } from '@/lib/permissions';
 import { initials } from '@/lib/utils';
 import { AuthShell } from './auth-shell';
-import { GoogleSignInButton } from './google-sign-in-button';
-import { googleAuthErrorMessage } from '@/lib/auth-errors';
+import { SocialSignInButtons } from './social-sign-in-buttons';
+import { oauthAuthErrorMessage } from '@/lib/auth-errors';
 
 export function LoginForm() {
+  const router = useRouter();
   const login = useAuthStore((s) => s.login);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,8 +33,8 @@ export function LoginForm() {
       setInfo('Email verified. You can sign in now.');
     }
     const err = searchParams.get('error');
-    const googleMsg = googleAuthErrorMessage(err);
-    if (googleMsg) setError(googleMsg);
+    const oauthMsg = oauthAuthErrorMessage(err);
+    if (oauthMsg) setError(oauthMsg);
     else if (err) setError('Sign-in failed. Please try again.');
   }, [searchParams]);
 
@@ -48,6 +50,11 @@ export function LoginForm() {
 
     setLoading(true);
     const result = await login(email.trim(), password);
+    if (result.requires2fa) {
+      router.push('/login/2fa');
+      setLoading(false);
+      return;
+    }
     if (!result.success) setError(result.error ?? 'Login failed');
     setLoading(false);
   };
@@ -58,7 +65,7 @@ export function LoginForm() {
       subtitle="Welcome back. Sign in with your email to continue to Jupiter."
     >
       <Suspense fallback={null}>
-        <GoogleSignInButton />
+        <SocialSignInButtons />
       </Suspense>
 
       <form onSubmit={handleSubmit} className="space-y-4">

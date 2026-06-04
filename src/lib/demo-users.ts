@@ -1,3 +1,5 @@
+import { DEFAULT_TEST_EMAIL } from './auth-config-constants';
+
 export type UserRole = 'admin' | 'lead' | 'member' | 'viewer';
 
 export interface DemoUser {
@@ -19,7 +21,7 @@ export const DEMO_ACCOUNTS: { username: string; password: string; user: DemoUser
       id: 'usr_admin',
       username: 'admin',
       name: 'Alex Pham',
-      email: 'alex@acme.dev',
+      email: DEFAULT_TEST_EMAIL,
       role: 'admin',
       avatarColor: '#7c3aed',
       title: 'Workspace Admin',
@@ -32,7 +34,7 @@ export const DEMO_ACCOUNTS: { username: string; password: string; user: DemoUser
       id: 'usr_lead',
       username: 'lead',
       name: 'Maya Chen',
-      email: 'maya@acme.dev',
+      email: `taiphantuan+lead@gmail.com`,
       role: 'lead',
       avatarColor: '#0ea5e9',
       title: 'Engineering Lead',
@@ -45,7 +47,7 @@ export const DEMO_ACCOUNTS: { username: string; password: string; user: DemoUser
       id: 'usr_member',
       username: 'member',
       name: 'Jordan Reyes',
-      email: 'jordan@acme.dev',
+      email: `taiphantuan+member@gmail.com`,
       role: 'member',
       avatarColor: '#10b981',
       title: 'Senior Engineer',
@@ -58,7 +60,7 @@ export const DEMO_ACCOUNTS: { username: string; password: string; user: DemoUser
       id: 'usr_viewer',
       username: 'viewer',
       name: 'Sam Brooks',
-      email: 'sam@acme.dev',
+      email: `taiphantuan+viewer@gmail.com`,
       role: 'viewer',
       avatarColor: '#f59e0b',
       title: 'Stakeholder',

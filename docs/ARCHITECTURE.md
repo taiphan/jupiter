@@ -294,4 +294,5 @@ flowchart TD
 - [v1.6-auth-requirements.md](./v1.6-auth-requirements.md) — email auth
 - [v1.7-google-sign-in-requirements.md](./v1.7-google-sign-in-requirements.md) — Google OAuth
 - [v1.8-persistence-requirements.md](./v1.8-persistence-requirements.md) — notifications, audit API, burndown tables
+- [v1.10-auth-security-requirements.md](./v1.10-auth-security-requirements.md) — Gmail SMTP mail + TOTP 2FA
 - [../README.md](../README.md) — runbooks (Vercel, Docker, demo accounts)

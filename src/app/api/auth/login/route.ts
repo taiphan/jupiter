@@ -7,6 +7,9 @@ import { loginBodySchema } from '@/server/auth/schemas';
 import { normalizeEmail } from '@/server/auth/email-normalize';
 import { checkRateLimit, clientIp } from '@/server/auth/rate-limit';
 import { toPublicUser } from '@/server/auth/user-mapper';
+import { userHas2faEnabled } from '@/server/auth/totp';
+import { setTotpChallenge } from '@/server/auth/totp-challenge';
+import { isTwoFactorEnabled } from '@/server/auth/config';
 
 export async function POST(request: Request) {
   const dbError = requireDb();
@@ -42,6 +45,11 @@ export async function POST(request: Request) {
     return error('Please verify your email before signing in.', 403);
   }
 
-  await createSession(user.id);
+  if ((await isTwoFactorEnabled()) && userHas2faEnabled(user)) {
+    await setTotpChallenge(user.id);
+    return json({ requires2fa: true });
+  }
+
+  await createSession(user.id, request);
   return json({ user: toPublicUser(user) });
 }
