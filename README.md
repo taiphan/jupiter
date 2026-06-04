@@ -84,7 +84,7 @@ Open [http://localhost:3100](http://localhost:3100).
 
 ```bash
 npm test           # run tests (host)
-npm run build:app  # Next.js build on the Mac
+npm run build      # Next.js build on the Mac
 npm run start:app  # serve a local build
 ```
 
@@ -95,7 +95,7 @@ Requires [OrbStack](https://orbstack.dev) or Docker Desktop.
 ```bash
 npm install
 npm run deploy     # build image + start app + Postgres
-# or: npm run build && npm run start
+# or: npm run build:docker && npm run start
 ```
 
 Open [http://localhost:3100](http://localhost:3100). First-time DB setup:

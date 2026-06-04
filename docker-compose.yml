@@ -1,4 +1,4 @@
-# OrbStack / Docker Compose — `npm run build` and `npm run deploy` target this stack.
+# OrbStack / Docker Compose — `npm run build:docker` and `npm run deploy` target this stack.
 # The Next.js compile runs in the Docker build (Linux VM), not on the Mac host.
 
 services:
