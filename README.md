@@ -114,7 +114,7 @@ npm run deploy:down   # stop stack
 | Layer | What it stores |
 |-------|----------------|
 | **Browser (Zustand)** | Projects, issues, sprints, board state — `localStorage` |
-| **Postgres (Docker)** | Users, sessions — `/api/auth/*` when `DATABASE_URL` is set |
+| **Postgres** | Users, sessions — `/api/auth/*` when `DATABASE_URL` or Vercel `POSTGRES_URL` is set |
 
 Login uses the **auth API** when Postgres is available (OrbStack deploy); otherwise it falls back to client-only demo accounts. Issue data is still per-browser until a future API sync.
 
@@ -150,6 +150,24 @@ APP_URL=http://localhost:3100
 6. Restart the app: `docker compose up -d --build app` or `npm run dev`.
 
 Full spec: [docs/v1.7-google-sign-in-requirements.md](./docs/v1.7-google-sign-in-requirements.md).
+
+## Vercel (v1.6 / v1.7 auth)
+
+Vercel’s Supabase/Postgres integration sets **`POSTGRES_URL`** (not `DATABASE_URL`). The app reads both.
+
+1. Merge/deploy the branch with `npm run build` → `next build` (not Docker).
+2. After linking Postgres, push schema and seed demo users:
+
+```bash
+npx vercel env pull .env.vercel.local
+set -a && source .env.vercel.local && set +a
+npm run db:push:host && npm run db:seed:host
+```
+
+3. Optional env in the Vercel dashboard:
+   - `APP_URL` — canonical site URL (OAuth redirects; defaults to `VERCEL_PROJECT_PRODUCTION_URL` when unset)
+   - `AUTH_SECRET` — session signing (defaults to the DB URL if unset)
+   - `AUTH_GOOGLE_ENABLED`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` for Google Sign-In
 
 ## Project Structure
 

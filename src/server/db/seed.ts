@@ -6,12 +6,13 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { DEMO_ACCOUNTS } from '@/lib/demo-users';
 import { hashPassword } from '@/server/auth/password';
+import { resolveDatabaseUrl } from '@/server/env';
 import * as schema from './schema';
 
 async function main() {
-  const url = process.env.DATABASE_URL;
+  const url = resolveDatabaseUrl();
   if (!url) {
-    console.error('DATABASE_URL is required');
+    console.error('DATABASE_URL or POSTGRES_URL is required');
     process.exit(1);
   }
 

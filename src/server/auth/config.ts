@@ -1,9 +1,11 @@
+import { resolveAppUrl, resolveDatabaseUrl } from '@/server/env';
+
 export function getAppUrl(): string {
-  return (process.env.APP_URL ?? 'http://localhost:3100').replace(/\/$/, '');
+  return resolveAppUrl();
 }
 
 export function getAuthSecret(): string {
-  const secret = process.env.AUTH_SECRET ?? process.env.DATABASE_URL;
+  const secret = process.env.AUTH_SECRET ?? resolveDatabaseUrl();
   if (!secret && process.env.NODE_ENV === 'production') {
     throw new Error('AUTH_SECRET or DATABASE_URL must be set in production');
   }

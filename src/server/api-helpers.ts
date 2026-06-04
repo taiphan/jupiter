@@ -15,7 +15,10 @@ export function error(message: string, status = 400) {
 /** 503 when the backend isn't provisioned yet. */
 export function requireDb() {
   if (!isDbConfigured()) {
-    return error('Backend not configured. Set DATABASE_URL to enable the API.', 503);
+    return error(
+      'Backend not configured. Set DATABASE_URL or POSTGRES_URL to enable the API.',
+      503,
+    );
   }
   return null;
 }

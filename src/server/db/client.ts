@@ -1,24 +1,26 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { resolveDatabaseUrl } from '@/server/env';
 import * as schema from './schema';
 
 /**
  * Lazily-initialized Drizzle client. The backend is opt-in: it only connects
- * when DATABASE_URL is present. Importing this module never throws — call
- * getDb() inside route handlers and handle the null case.
+ * when a database URL is present (DATABASE_URL or Vercel POSTGRES_URL).
+ * Importing this module never throws — call getDb() and handle the null case.
  */
 
 let client: ReturnType<typeof postgres> | null = null;
 let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
 export function isDbConfigured(): boolean {
-  return Boolean(process.env.DATABASE_URL);
+  return Boolean(resolveDatabaseUrl());
 }
 
 export function getDb() {
-  if (!isDbConfigured()) return null;
+  const databaseUrl = resolveDatabaseUrl();
+  if (!databaseUrl) return null;
   if (!dbInstance) {
-    client = postgres(process.env.DATABASE_URL!, {
+    client = postgres(databaseUrl, {
       max: 5,
       prepare: false, // friendlier to serverless poolers (PgBouncer/Neon)
     });
