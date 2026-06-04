@@ -13,6 +13,8 @@ import { initials } from '@/lib/utils';
 import { AuthShell } from './auth-shell';
 import { SocialSignInButtons } from './social-sign-in-buttons';
 import { oauthAuthErrorMessage } from '@/lib/auth-errors';
+import { authInputClass, authLabelClass } from './auth-styles';
+import { AuthContinueButton } from './auth-continue-button';
 
 export function LoginForm() {
   const router = useRouter();
@@ -68,11 +70,15 @@ export function LoginForm() {
 
   return (
     <AuthShell
-      title="Log in to VPBank"
-      subtitle={
-        hasSocial
-          ? 'Sign in with Google, Microsoft, GitHub, or your work email.'
-          : 'Welcome back. Sign in with your email to continue to Jupiter.'
+      title="Sign in to Jupiter"
+      subtitle="Welcome back! Please sign in to continue"
+      footer={
+        <>
+          Don&apos;t have an account?{' '}
+          <Link href="/signup" className="font-medium text-violet-400 hover:text-violet-300">
+            Sign up
+          </Link>
+        </>
       }
     >
       <Suspense fallback={null}>
@@ -80,26 +86,25 @@ export function LoginForm() {
       </Suspense>
 
       {authConfig?.workspacePersistence && !hasSocial && authConfig.emailAuth ? (
-        <p className="mb-3 text-center text-[11px] text-muted-foreground">
-          Social sign-in is not configured yet. Admins can enable Google, Microsoft, or GitHub
-          under Settings → Authentication &amp; email.
+        <p className="mb-4 text-center text-xs text-zinc-500">
+          Social sign-in is not configured. Admins: Settings → Authentication &amp; email.
         </p>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5 pb-6">
         {info ? (
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 text-center">{info}</p>
+          <p className="text-center text-xs text-emerald-400">{info}</p>
         ) : null}
         {error ? (
-          <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
-            <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" aria-hidden="true" />
-            <p className="text-xs text-destructive">{error}</p>
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5">
+            <AlertCircle className="h-4 w-4 shrink-0 text-red-400" aria-hidden="true" />
+            <p className="text-xs text-red-300">{error}</p>
           </div>
         ) : null}
 
-        <div className="space-y-1.5">
-          <label htmlFor="email" className="block text-[12px] font-medium">
-            Email
+        <div className="space-y-2">
+          <label htmlFor="email" className={authLabelClass}>
+            Email address
           </label>
           <input
             id="email"
@@ -109,22 +114,22 @@ export function LoginForm() {
               setEmail(e.target.value);
               setError('');
             }}
-            className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
-            placeholder="you@company.com"
+            className={authInputClass}
+            placeholder="Enter your email address"
             required
             autoComplete="email"
             autoFocus
           />
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="block text-[12px] font-medium">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <label htmlFor="password" className={authLabelClass}>
               Password
             </label>
             <Link
               href="/forgot-password"
-              className="text-[11px] text-primary hover:underline"
+              className="text-xs text-violet-400 hover:text-violet-300 hover:underline"
             >
               Forgot password?
             </Link>
@@ -137,36 +142,25 @@ export function LoginForm() {
               setPassword(e.target.value);
               setError('');
             }}
-            className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
-            placeholder="Enter password"
+            className={authInputClass}
+            placeholder="Enter your password"
             required
             autoComplete="current-password"
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full h-10 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
+        <AuthContinueButton loading={loading}>
           {loading ? 'Signing in…' : 'Continue'}
-        </button>
+        </AuthContinueButton>
       </form>
 
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        No account?{' '}
-        <Link href="/signup" className="text-primary font-medium hover:underline">
-          Sign up
-        </Link>
-      </p>
-
       {devMode ? (
-        <div className="mt-6 border-t pt-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+        <div className="mb-6 rounded-lg border border-white/10 bg-[#0c0c0e] p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
             Dev mode (no database)
           </p>
-          <p className="text-[10px] text-muted-foreground mb-3">
-            Use demo emails below. With Docker, run <code className="text-[10px]">npm run db:setup</code>.
+          <p className="text-[11px] text-zinc-500 mb-3">
+            Use demo accounts below, or run <code className="text-violet-300">npm run db:setup</code>.
           </p>
           <div className="space-y-1.5">
             {DEMO_ACCOUNTS.map(({ user, password: pw }) => (
@@ -178,7 +172,7 @@ export function LoginForm() {
                   setPassword(pw);
                   setError('');
                 }}
-                className="flex w-full items-center gap-2.5 rounded-md border border-transparent p-2 text-left transition-colors hover:bg-muted cursor-pointer"
+                className="flex w-full items-center gap-2.5 rounded-md border border-transparent p-2 text-left transition-colors hover:bg-white/5 cursor-pointer"
               >
                 <div
                   className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white"
@@ -187,14 +181,9 @@ export function LoginForm() {
                   {initials(user.name)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{user.name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {ROLE_LABELS[user.role]}
-                  </p>
+                  <p className="text-xs font-medium text-zinc-200 truncate">{user.name}</p>
+                  <p className="text-[10px] text-zinc-500 truncate">{ROLE_LABELS[user.role]}</p>
                 </div>
-                <code className="hidden text-[10px] text-muted-foreground sm:inline">
-                  {user.email}
-                </code>
               </button>
             ))}
           </div>

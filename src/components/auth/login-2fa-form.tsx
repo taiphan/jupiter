@@ -7,6 +7,8 @@ import { AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth-store';
 import { challenge2faViaApi } from '@/lib/auth-api';
 import { AuthShell } from './auth-shell';
+import { AuthContinueButton } from './auth-continue-button';
+import { authInputClass, authLabelClass } from './auth-styles';
 
 export function Login2faForm() {
   const router = useRouter();
@@ -42,33 +44,38 @@ export function Login2faForm() {
     <AuthShell
       title="Two-factor authentication"
       subtitle="Enter the code from your authenticator app to finish signing in."
+      footer={
+        <Link href="/login" className="font-medium text-violet-400 hover:text-violet-300">
+          Back to sign in
+        </Link>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5 pb-6">
         {error ? (
-          <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
-            <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" aria-hidden="true" />
-            <p className="text-xs text-destructive">{error}</p>
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5">
+            <AlertCircle className="h-4 w-4 shrink-0 text-red-400" aria-hidden="true" />
+            <p className="text-xs text-red-300">{error}</p>
           </div>
         ) : null}
 
         {useBackup ? (
-          <div className="space-y-1.5">
-            <label htmlFor="backup" className="block text-[12px] font-medium">
+          <div className="space-y-2">
+            <label htmlFor="backup" className={authLabelClass}>
               Backup code
             </label>
             <input
               id="backup"
               value={backupCode}
               onChange={(e) => setBackupCode(e.target.value)}
-              className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm font-mono"
+              className={`${authInputClass} font-mono`}
               placeholder="XXXX-XXXX-XXXX"
               required
               autoFocus
             />
           </div>
         ) : (
-          <div className="space-y-1.5">
-            <label htmlFor="totp" className="block text-[12px] font-medium">
+          <div className="space-y-2">
+            <label htmlFor="totp" className={authLabelClass}>
               6-digit code
             </label>
             <input
@@ -78,24 +85,23 @@ export function Login2faForm() {
               maxLength={6}
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm font-mono tracking-[0.3em] text-center"
+              className={`${authInputClass} font-mono tracking-[0.3em] text-center`}
               required
               autoFocus
             />
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={loading || (useBackup ? !backupCode.trim() : code.length !== 6)}
-          className="w-full h-10 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+        <AuthContinueButton
+          loading={loading}
+          disabled={useBackup ? !backupCode.trim() : code.length !== 6}
         >
           {loading ? 'Verifying…' : 'Continue'}
-        </button>
+        </AuthContinueButton>
 
         <button
           type="button"
-          className="w-full text-xs text-primary hover:underline"
+          className="w-full text-xs text-violet-400 hover:text-violet-300 hover:underline"
           onClick={() => {
             setUseBackup(!useBackup);
             setError('');
@@ -104,12 +110,6 @@ export function Login2faForm() {
           {useBackup ? 'Use authenticator code' : 'Use a backup code'}
         </button>
       </form>
-
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        <Link href="/login" className="text-primary hover:underline">
-          Back to sign in
-        </Link>
-      </p>
     </AuthShell>
   );
 }

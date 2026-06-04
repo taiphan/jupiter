@@ -4,39 +4,40 @@ export function AuthShell({
   title,
   subtitle,
   children,
+  footer,
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <header className="flex h-12 items-center border-b bg-card px-4">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded bg-primary text-[10px] font-black text-primary-foreground">
-            J
-          </span>
-          <span className="text-sm font-semibold">Jupiter</span>
-        </Link>
-      </header>
-
-      <main className="flex min-h-[calc(100vh-3rem)] items-center justify-center px-4 py-12">
-        <div className="w-full max-w-[400px] rounded-lg border bg-card p-8 ds-shadow-raised">
-          <div className="mb-6 flex flex-col items-center text-center">
-            <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-md bg-[#00A651] text-sm font-black text-white">
-              VP
-            </span>
-            <h1 className="text-xl font-semibold">{title}</h1>
-            {subtitle ? (
-              <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
-            ) : null}
+    <div className="min-h-screen bg-[#0c0c0e] text-zinc-100">
+      <main className="flex min-h-screen items-center justify-center px-4 py-10">
+        <div className="w-full max-w-[420px] overflow-hidden rounded-2xl border border-white/10 bg-[#161618] shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
+          <div className="px-8 pb-2 pt-8">
+            <div className="mb-8 text-left">
+              <h1 className="text-[1.35rem] font-semibold tracking-tight text-white">{title}</h1>
+              {subtitle ? (
+                <p className="mt-2 text-sm leading-relaxed text-zinc-400">{subtitle}</p>
+              ) : null}
+            </div>
+            {children}
           </div>
-          {children}
+          {footer ? (
+            <div className="border-t border-white/5 bg-[#121214] px-8 py-4 text-center text-sm text-zinc-500">
+              {footer}
+            </div>
+          ) : null}
         </div>
       </main>
 
-      <footer className="border-t bg-card px-4 py-3 text-center text-[11px] text-muted-foreground">
-        © 2026 VPBank · Atlassian-style project tracker
+      <footer className="fixed bottom-0 left-0 right-0 hidden border-t border-white/5 bg-[#0c0c0e]/80 px-4 py-2 text-center text-[10px] text-zinc-600 sm:block">
+        <Link href="/" className="hover:text-zinc-400">
+          Jupiter
+        </Link>
+        <span className="mx-2">·</span>
+        <span>VPBank project tracker</span>
       </footer>
     </div>
   );

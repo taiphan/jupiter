@@ -129,6 +129,7 @@ The **login** (`/login`) and **sign-up** (`/signup`) pages must expose every aut
 | FR-LOGIN-6 | Display OAuth error query params (`?error=`) with user-safe messages. | ✅ |
 | FR-LOGIN-7 | Sign-up page uses the same social + email pattern as login. | ✅ |
 | FR-LOGIN-8 | Provider availability = **enabled flag OR env** + **client ID + client secret** (DB and env merged). | ✅ |
+| FR-LOGIN-9 | **OrbStack-style** auth panel: dark card, GitHub/Google side-by-side, `or` divider, violet **Continue** with arrow, footer sign-up link. | ✅ |
 
 **Ops:** If social buttons are missing in production, set **Settings → Authentication & email** (Google enabled + client ID + secret) **or** Vercel env: `AUTH_GOOGLE_ENABLED=true`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_URL=https://v0-jupiter.vercel.app`.
 

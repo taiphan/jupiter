@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { AlertCircle } from 'lucide-react';
 import { AuthShell } from '@/components/auth/auth-shell';
 import { SocialSignInButtons } from '@/components/auth/social-sign-in-buttons';
+import { AuthContinueButton } from '@/components/auth/auth-continue-button';
+import { authInputClass, authLabelClass } from '@/components/auth/auth-styles';
 import { registerViaApi } from '@/lib/auth-api';
 
 export default function SignUpPage() {
@@ -38,53 +40,66 @@ export default function SignUpPage() {
   };
 
   return (
-    <AuthShell title="Create your account" subtitle="Sign up with your work email.">
+    <AuthShell
+      title="Sign up for Jupiter"
+      subtitle="Create your account to start tracking work"
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link href="/login" className="font-medium text-violet-400 hover:text-violet-300">
+            Sign in
+          </Link>
+        </>
+      }
+    >
       <Suspense fallback={null}>
         <SocialSignInButtons />
       </Suspense>
 
       {message ? (
-        <p className="mb-4 text-sm text-center text-emerald-600 dark:text-emerald-400">{message}</p>
+        <p className="mb-4 text-center text-sm text-emerald-400">{message}</p>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-6">
           {error ? (
-            <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">
-              <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
-              <p className="text-xs text-destructive">{error}</p>
+            <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5">
+              <AlertCircle className="h-4 w-4 shrink-0 text-red-400" aria-hidden="true" />
+              <p className="text-xs text-red-300">{error}</p>
             </div>
           ) : null}
 
-          <div className="space-y-1.5">
-            <label htmlFor="name" className="block text-[12px] font-medium">
+          <div className="space-y-2">
+            <label htmlFor="name" className={authLabelClass}>
               Full name
             </label>
             <input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm"
+              className={authInputClass}
+              placeholder="Your name"
               required
               autoComplete="name"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="signup-email" className="block text-[12px] font-medium">
-              Email
+          <div className="space-y-2">
+            <label htmlFor="signup-email" className={authLabelClass}>
+              Email address
             </label>
             <input
               id="signup-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm"
+              className={authInputClass}
+              placeholder="Enter your email address"
               required
               autoComplete="email"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="signup-password" className="block text-[12px] font-medium">
+          <div className="space-y-2">
+            <label htmlFor="signup-password" className={authLabelClass}>
               Password
             </label>
             <input
@@ -92,15 +107,16 @@ export default function SignUpPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm"
+              className={authInputClass}
+              placeholder="At least 8 characters"
               required
               minLength={8}
               autoComplete="new-password"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="confirm" className="block text-[12px] font-medium">
+          <div className="space-y-2">
+            <label htmlFor="confirm" className={authLabelClass}>
               Confirm password
             </label>
             <input
@@ -108,29 +124,19 @@ export default function SignUpPage() {
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full h-10 px-3 bg-background border border-input rounded-md text-sm"
+              className={authInputClass}
+              placeholder="Repeat your password"
               required
               minLength={8}
               autoComplete="new-password"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-10 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
-          >
-            {loading ? 'Creating account…' : 'Sign up'}
-          </button>
+          <AuthContinueButton loading={loading}>
+            {loading ? 'Creating account…' : 'Continue'}
+          </AuthContinueButton>
         </form>
       )}
-
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        Already have an account?{' '}
-        <Link href="/login" className="text-primary font-medium hover:underline">
-          Sign in
-        </Link>
-      </p>
     </AuthShell>
   );
 }
