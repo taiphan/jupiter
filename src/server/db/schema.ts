@@ -78,7 +78,17 @@ export const projects = pgTable('projects', {
   type: text('type').notNull().$type<'kanban' | 'scrum'>(),
   leadId: text('lead_id').notNull().references(() => users.id),
   issueCounter: integer('issue_counter').notNull().default(0),
-  statusOverrides: jsonb('status_overrides'),
+  statusOverrides: jsonb('status_overrides').$type<
+    Partial<
+      Record<
+        string,
+        { label?: string; color?: string; showOnBoard?: boolean; order?: number }
+      >
+    >
+  >(),
+  transitionRules: jsonb('transition_rules').$type<
+    Record<string, Record<string, string[]>>
+  >(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -137,6 +147,8 @@ export const issues = pgTable(
     parentId: text('parent_id'),
     sprintId: text('sprint_id').references(() => sprints.id, { onDelete: 'set null' }),
     storyPoints: integer('story_points'),
+    /** Calendar day (YYYY-MM-DD) for list/calendar views */
+    dueDate: text('due_date'),
     customFields: jsonb('custom_fields').$type<Record<string, string | number | boolean>>(),
     rank: doublePrecision('rank').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -201,6 +213,19 @@ export const attachments = pgTable('attachments', {
 // Runtime data lives in the Zustand `issue-links-store` for v1.1; this
 // table is reserved for the v1.2 server migration so the schema is forward
 // compatible (Req 9.1).
+
+export const quickFilters = pgTable(
+  'quick_filters',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    filters: jsonb('filters').notNull().$type<Record<string, unknown>>(),
+    createdById: text('created_by_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('quick_filters_project_idx').on(t.projectId)],
+);
 
 export const issueLinks = pgTable(
   'issue_links',

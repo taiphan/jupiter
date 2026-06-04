@@ -116,7 +116,9 @@ npm run deploy:down   # stop stack
 | **Browser (Zustand)** | Projects, issues, sprints, board state — `localStorage` |
 | **Postgres** | Users, sessions — `/api/auth/*` when `DATABASE_URL` or Vercel `POSTGRES_URL` is set |
 
-Login uses the **auth API** when Postgres is available (OrbStack deploy); otherwise it falls back to client-only demo accounts. Issue data is still per-browser until a future API sync.
+Login uses the **auth API** when Postgres is available (OrbStack deploy); otherwise it falls back to client-only demo accounts.
+
+When Postgres is configured, **`/api/workspace`** loads and saves projects, issues, sprints, comments, links, and custom fields (debounced). See [docs/DATABASE.md](./docs/DATABASE.md).
 
 ## Demo accounts (email sign-in)
 

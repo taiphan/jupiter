@@ -21,7 +21,7 @@ interface CustomFieldsState {
   getFieldsForProject: (projectId: string) => CustomFieldDef[];
 }
 
-const SEED_FIELDS: CustomFieldDef[] = [
+export const SEED_CUSTOM_FIELDS: CustomFieldDef[] = [
   {
     id: 'cf_web_env', projectId: 'prj_web', name: 'Environment', type: 'select',
     options: ['Production', 'Staging', 'Local'], order: 0,
@@ -41,7 +41,7 @@ const SEED_FIELDS: CustomFieldDef[] = [
 export const useCustomFieldsStore = create<CustomFieldsState>()(
   persist(
     (set, get) => ({
-      fields: SEED_FIELDS,
+      fields: SEED_CUSTOM_FIELDS,
 
       createField: ({ projectId, name, type, options, required }) => {
         const projectFields = get().fields.filter((f) => f.projectId === projectId);
