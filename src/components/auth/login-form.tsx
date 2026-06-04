@@ -23,10 +23,17 @@ export function LoginForm() {
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
   const [devMode, setDevMode] = useState(false);
+  const [authConfig, setAuthConfig] = useState<Awaited<ReturnType<typeof fetchAuthConfig>>>(null);
   const searchParams = useSearchParams();
+
+  const hasSocial =
+    Boolean(authConfig?.googleAuth) ||
+    Boolean(authConfig?.microsoftAuth) ||
+    Boolean(authConfig?.githubAuth);
 
   useEffect(() => {
     void fetchAuthConfig().then((cfg) => {
+      setAuthConfig(cfg);
       if (!cfg?.emailAuth) setDevMode(true);
     });
     if (searchParams.get('verified') === '1') {
@@ -62,11 +69,22 @@ export function LoginForm() {
   return (
     <AuthShell
       title="Log in to VPBank"
-      subtitle="Welcome back. Sign in with your email to continue to Jupiter."
+      subtitle={
+        hasSocial
+          ? 'Sign in with Google, Microsoft, GitHub, or your work email.'
+          : 'Welcome back. Sign in with your email to continue to Jupiter.'
+      }
     >
       <Suspense fallback={null}>
         <SocialSignInButtons />
       </Suspense>
+
+      {authConfig?.workspacePersistence && !hasSocial && authConfig.emailAuth ? (
+        <p className="mb-3 text-center text-[11px] text-muted-foreground">
+          Social sign-in is not configured yet. Admins can enable Google, Microsoft, or GitHub
+          under Settings → Authentication &amp; email.
+        </p>
+      ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {info ? (

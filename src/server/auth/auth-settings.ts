@@ -54,17 +54,43 @@ function rowToResolved(row: typeof schema.workspaceAuthConfig.$inferSelect): Res
 
 function mergeEnvFallback(row: ResolvedAuthSettings): ResolvedAuthSettings {
   const env = defaultsFromEnv();
+
+  const googleClientId = row.googleClientId || env.googleClientId;
+  const googleClientSecret = row.googleClientSecret ?? env.googleClientSecret;
+  const microsoftClientId = row.microsoftClientId || env.microsoftClientId;
+  const microsoftClientSecret = row.microsoftClientSecret ?? env.microsoftClientSecret;
+  const githubClientId = row.githubClientId || env.githubClientId;
+  const githubClientSecret = row.githubClientSecret ?? env.githubClientSecret;
+
+  /** Credentials or env flag enable OAuth; avoids DB row stuck at defaults while Vercel has secrets. */
+  const googleAuthEnabled =
+    row.googleAuthEnabled ||
+    env.googleAuthEnabled ||
+    Boolean(googleClientId && googleClientSecret);
+  const microsoftAuthEnabled =
+    row.microsoftAuthEnabled ||
+    env.microsoftAuthEnabled ||
+    Boolean(microsoftClientId && microsoftClientSecret);
+  const githubAuthEnabled =
+    row.githubAuthEnabled ||
+    env.githubAuthEnabled ||
+    Boolean(githubClientId && githubClientSecret);
+
   return {
     ...row,
     smtpPass: row.smtpPass ?? env.smtpPass,
-    googleClientSecret: row.googleClientSecret ?? env.googleClientSecret,
-    googleClientId: row.googleClientId || env.googleClientId,
-    microsoftClientSecret: row.microsoftClientSecret ?? env.microsoftClientSecret,
-    microsoftClientId: row.microsoftClientId || env.microsoftClientId,
-    githubClientSecret: row.githubClientSecret ?? env.githubClientSecret,
-    githubClientId: row.githubClientId || env.githubClientId,
+    googleClientId,
+    googleClientSecret,
+    googleAuthEnabled,
+    microsoftClientId,
+    microsoftClientSecret,
+    microsoftAuthEnabled,
+    githubClientId,
+    githubClientSecret,
+    githubAuthEnabled,
     smtpUser: row.smtpUser || env.smtpUser,
     emailFrom: row.emailFrom || env.emailFrom,
+    appUrl: row.appUrl || env.appUrl,
   };
 }
 

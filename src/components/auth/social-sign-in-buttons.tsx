@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { fetchAuthConfig } from '@/lib/auth-api';
+import { fetchAuthConfig, type LoginAuthConfig } from '@/lib/auth-api';
 
 type Provider = 'google' | 'microsoft' | 'github';
 
@@ -10,46 +10,60 @@ const PROVIDERS: {
   id: Provider;
   label: string;
   path: string;
+  configKey: keyof Pick<LoginAuthConfig, 'googleAuth' | 'microsoftAuth' | 'githubAuth'>;
   icon: React.ReactNode;
 }[] = [
   {
     id: 'google',
     label: 'Google',
     path: '/api/auth/google',
+    configKey: 'googleAuth',
     icon: <GoogleIcon />,
   },
   {
     id: 'microsoft',
     label: 'Microsoft',
     path: '/api/auth/microsoft',
+    configKey: 'microsoftAuth',
     icon: <MicrosoftIcon />,
   },
   {
     id: 'github',
     label: 'GitHub',
     path: '/api/auth/github',
+    configKey: 'githubAuth',
     icon: <GitHubIcon />,
   },
 ];
 
 export function SocialSignInButtons() {
-  const [enabled, setEnabled] = useState<Provider[]>([]);
+  const [config, setConfig] = useState<LoginAuthConfig | null>(null);
+  const [loading, setLoading] = useState(true);
   const [loadingId, setLoadingId] = useState<Provider | null>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     void fetchAuthConfig().then((cfg) => {
-      if (!cfg) return;
-      const list: Provider[] = [];
-      if (cfg.googleAuth) list.push('google');
-      if (cfg.microsoftAuth) list.push('microsoft');
-      if (cfg.githubAuth) list.push('github');
-      setEnabled(list);
+      setConfig(cfg);
+      setLoading(false);
     });
   }, []);
 
-  if (enabled.length === 0) return null;
+  const enabled = PROVIDERS.filter((p) => config?.[p.configKey]);
+
+  if (loading) {
+    return (
+      <div className="space-y-2" aria-busy="true" aria-label="Loading sign-in options">
+        <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+        <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+      </div>
+    );
+  }
+
+  if (enabled.length === 0) {
+    return null;
+  }
 
   const redirect =
     pathname && pathname !== '/login' && pathname !== '/signup'
@@ -59,7 +73,7 @@ export function SocialSignInButtons() {
   return (
     <>
       <div className="space-y-2">
-        {PROVIDERS.filter((p) => enabled.includes(p.id)).map((p) => {
+        {enabled.map((p) => {
           const href = `${p.path}?redirect=${encodeURIComponent(redirect)}`;
           return (
             <a
@@ -80,7 +94,7 @@ export function SocialSignInButtons() {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-[11px] uppercase">
-          <span className="bg-card px-2 text-muted-foreground">or</span>
+          <span className="bg-card px-2 text-muted-foreground">or use email</span>
         </div>
       </div>
     </>

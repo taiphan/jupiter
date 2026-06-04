@@ -102,23 +102,21 @@ export async function disconnectGoogleViaApi(): Promise<{ ok: boolean; error?: s
   return disconnectOAuthViaApi('google');
 }
 
-export async function fetchAuthConfig(): Promise<{
+export type LoginAuthConfig = {
   emailAuth: boolean;
   googleAuth: boolean;
   microsoftAuth: boolean;
   githubAuth: boolean;
   twoFactorAuth?: boolean;
-} | null> {
+  workspacePersistence?: boolean;
+  emailProvider?: string;
+};
+
+export async function fetchAuthConfig(): Promise<LoginAuthConfig | null> {
   try {
     const res = await fetch('/api/auth/config', { credentials: 'same-origin' });
     if (!res.ok) return null;
-    return (await res.json()) as {
-      emailAuth: boolean;
-      googleAuth: boolean;
-      microsoftAuth: boolean;
-      githubAuth: boolean;
-      twoFactorAuth?: boolean;
-    };
+    return (await res.json()) as LoginAuthConfig;
   } catch {
     return null;
   }

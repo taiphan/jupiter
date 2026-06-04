@@ -115,6 +115,23 @@ Aligned with **SaaS breadth** (GitHub, Linear) and **enterprise** expectations (
 | Roles (RBAC) | admin / lead / member / viewer | ✅ | Same for all login methods |
 | Local demo mode (no DB) | `auth-store` + seed accounts | ✅ | Dev only |
 
+### 7.1.1 Login & sign-up UI (required)
+
+The **login** (`/login`) and **sign-up** (`/signup`) pages must expose every auth method the server has configured.
+
+| ID | Requirement | Status |
+|----|-------------|--------|
+| FR-LOGIN-1 | On mount, call `GET /api/auth/config` (no auth required). | ✅ |
+| FR-LOGIN-2 | Render **Continue with Google / Microsoft / GitHub** for each provider where config returns `*Auth: true`. | ✅ |
+| FR-LOGIN-3 | Show a loading skeleton for social buttons until config loads (no silent empty flash). | ✅ |
+| FR-LOGIN-4 | Always show **email + password** when `emailAuth` is true (Postgres mode). | ✅ |
+| FR-LOGIN-5 | After password login with 2FA enabled, redirect to `/login/2fa`. | ✅ |
+| FR-LOGIN-6 | Display OAuth error query params (`?error=`) with user-safe messages. | ✅ |
+| FR-LOGIN-7 | Sign-up page uses the same social + email pattern as login. | ✅ |
+| FR-LOGIN-8 | Provider availability = **enabled flag OR env** + **client ID + client secret** (DB and env merged). | ✅ |
+
+**Ops:** If social buttons are missing in production, set **Settings → Authentication & email** (Google enabled + client ID + secret) **or** Vercel env: `AUTH_GOOGLE_ENABLED=true`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_URL=https://v0-jupiter.vercel.app`.
+
 ### 7.2 Security & delivery (v1.10) ✅
 
 | Capability | Status | Notes |
@@ -124,16 +141,16 @@ Aligned with **SaaS breadth** (GitHub, Linear) and **enterprise** expectations (
 | **Admin auth settings UI** | ✅ | SMTP, Google, app URL; `workspace_auth_config` |
 | Google OAuth + 2FA step-up | ⬜ stretch | Password login + 2FA shipped first |
 
-### 7.3 Breadth (v1.11)
+### 7.3 Breadth (v1.11) ✅
 
 | Capability | Status | Notes |
 |------------|--------|-------|
-| **Microsoft** (Entra ID) OAuth | ⬜ | Same pattern as Google |
-| **GitHub** OAuth | ⬜ | |
+| **Microsoft** (Entra ID) OAuth | ✅ | `/api/auth/microsoft`; login UI when configured |
+| **GitHub** OAuth | ✅ | `/api/auth/github`; login UI when configured |
 | **Apple** Sign In | ⬜ stretch | |
-| Add password for OAuth-only users | ⬜ | Settings → Security |
-| Sign out all devices / session list | ⬜ | Revoke sessions API + UI |
-| **Personal access tokens** (PAT) | ⬜ | Bearer `jpt_…` for API/CI |
+| Add password for OAuth-only users | ✅ | Settings → Set password |
+| Sign out all devices / session list | ✅ | Settings → Active sessions |
+| **Personal access tokens** (PAT) | ✅ | Bearer `jpt_…` for API/CI |
 | CAPTCHA on auth (Turnstile/hCaptcha) | ⬜ stretch | After repeated failures |
 | Breached-password check (HIBP) | ⬜ stretch | Register + password change |
 | Per-user security activity log | ⬜ stretch | Login/OAuth/PAT events |
