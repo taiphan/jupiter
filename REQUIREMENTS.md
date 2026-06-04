@@ -131,7 +131,9 @@ The **login** (`/login`) and **sign-up** (`/signup`) pages must expose every aut
 | FR-LOGIN-8 | Provider availability = **enabled flag OR env** + **client ID + client secret** (DB and env merged). | ✅ |
 | FR-LOGIN-9 | **OrbStack-style** auth panel: dark card, GitHub/Google side-by-side, `or` divider, violet **Continue** with arrow, footer sign-up link. | ✅ |
 
-**Ops:** If social buttons are missing in production, set **Settings → Authentication & email** (Google enabled + client ID + secret) **or** Vercel env: `AUTH_GOOGLE_ENABLED=true`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_URL=https://v0-jupiter.vercel.app`.
+**Defaults:** Google, Microsoft, GitHub, and 2FA are **enabled by default** in `workspace_auth_config` and env (set `AUTH_*_ENABLED=false` to opt out). Login shows social buttons when toggles are on; OAuth callbacks still need client ID + secret in Settings or Vercel.
+
+**Ops:** Add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `APP_URL=https://v0-jupiter.vercel.app` (or configure in **Settings → Authentication & email**).
 
 ### 7.2 Security & delivery (v1.10) ✅
 

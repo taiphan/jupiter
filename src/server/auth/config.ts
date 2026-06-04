@@ -1,6 +1,6 @@
 import { resolveAppUrl, resolveDatabaseUrl } from '@/server/env';
 import { getAuthSettings } from './auth-settings';
-import { getLoginAuthConfig } from './login-config';
+import { getLoginAuthConfig, providerOperational } from './login-config';
 
 export function getAuthSecret(): string {
   const secret = process.env.AUTH_SECRET ?? resolveDatabaseUrl();
@@ -20,8 +20,7 @@ export async function getAppUrlAsync(): Promise<string> {
 }
 
 export async function isGoogleAuthEnabled(): Promise<boolean> {
-  const cfg = await getLoginAuthConfig();
-  return cfg.googleAuth;
+  return providerOperational(await getAuthSettings(), 'google');
 }
 
 export async function getGoogleClientId(): Promise<string | undefined> {
@@ -34,13 +33,11 @@ export async function isTwoFactorEnabled(): Promise<boolean> {
 }
 
 export async function isMicrosoftAuthEnabled(): Promise<boolean> {
-  const cfg = await getLoginAuthConfig();
-  return cfg.microsoftAuth;
+  return providerOperational(await getAuthSettings(), 'microsoft');
 }
 
 export async function isGitHubAuthEnabled(): Promise<boolean> {
-  const cfg = await getLoginAuthConfig();
-  return cfg.githubAuth;
+  return providerOperational(await getAuthSettings(), 'github');
 }
 
 export { getLoginAuthConfig };

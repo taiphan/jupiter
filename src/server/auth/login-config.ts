@@ -12,29 +12,34 @@ export type LoginAuthConfig = {
   emailProvider?: ResolvedAuthSettings['emailProvider'];
 };
 
-function providerReady(
+/** Show on login/sign-up when the provider toggle is on (credentials may still be pending). */
+function providerEnabledForUi(
   settings: ResolvedAuthSettings,
   provider: 'google' | 'microsoft' | 'github',
 ): boolean {
   switch (provider) {
     case 'google':
-      return (
-        settings.googleAuthEnabled &&
-        Boolean(settings.googleClientId) &&
-        Boolean(settings.googleClientSecret)
-      );
+      return settings.googleAuthEnabled;
     case 'microsoft':
-      return (
-        settings.microsoftAuthEnabled &&
-        Boolean(settings.microsoftClientId) &&
-        Boolean(settings.microsoftClientSecret)
-      );
+      return settings.microsoftAuthEnabled;
     case 'github':
-      return (
-        settings.githubAuthEnabled &&
-        Boolean(settings.githubClientId) &&
-        Boolean(settings.githubClientSecret)
-      );
+      return settings.githubAuthEnabled;
+  }
+}
+
+/** OAuth routes require client id + secret. */
+export function providerOperational(
+  settings: ResolvedAuthSettings,
+  provider: 'google' | 'microsoft' | 'github',
+): boolean {
+  if (!providerEnabledForUi(settings, provider)) return false;
+  switch (provider) {
+    case 'google':
+      return Boolean(settings.googleClientId && settings.googleClientSecret);
+    case 'microsoft':
+      return Boolean(settings.microsoftClientId && settings.microsoftClientSecret);
+    case 'github':
+      return Boolean(settings.githubClientId && settings.githubClientSecret);
   }
 }
 
@@ -42,9 +47,9 @@ function configFromEnv(): LoginAuthConfig {
   const env = defaultsFromEnv();
   return {
     emailAuth: false,
-    googleAuth: providerReady(env, 'google'),
-    microsoftAuth: providerReady(env, 'microsoft'),
-    githubAuth: providerReady(env, 'github'),
+    googleAuth: providerEnabledForUi(env, 'google'),
+    microsoftAuth: providerEnabledForUi(env, 'microsoft'),
+    githubAuth: providerEnabledForUi(env, 'github'),
     twoFactorAuth: env.twoFactorEnabled,
     workspacePersistence: false,
     emailProvider: env.emailProvider,
@@ -60,9 +65,9 @@ export async function getLoginAuthConfig(): Promise<LoginAuthConfig> {
   const settings = await getAuthSettings();
   return {
     emailAuth: true,
-    googleAuth: providerReady(settings, 'google'),
-    microsoftAuth: providerReady(settings, 'microsoft'),
-    githubAuth: providerReady(settings, 'github'),
+    googleAuth: providerEnabledForUi(settings, 'google'),
+    microsoftAuth: providerEnabledForUi(settings, 'microsoft'),
+    githubAuth: providerEnabledForUi(settings, 'github'),
     twoFactorAuth: settings.twoFactorEnabled,
     workspacePersistence: true,
     emailProvider: settings.emailProvider,

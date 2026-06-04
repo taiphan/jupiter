@@ -12,6 +12,31 @@ import { defaultsFromEnv } from './auth-settings-types';
 
 const ROW_ID = 'default';
 
+/** One-time: rows created before “all providers on by default” had every OAuth flag false. */
+async function migrateLegacyAuthFlagsIfNeeded(
+  row: typeof schema.workspaceAuthConfig.$inferSelect,
+): Promise<void> {
+  const db = getDb();
+  if (!db) return;
+
+  const legacyAllOAuthOff =
+    !row.googleAuthEnabled && !row.microsoftAuthEnabled && !row.githubAuthEnabled;
+  if (!legacyAllOAuthOff) return;
+
+  await db
+    .update(schema.workspaceAuthConfig)
+    .set({
+      googleAuthEnabled: true,
+      microsoftAuthEnabled: true,
+      githubAuthEnabled: true,
+      twoFactorEnabled: row.twoFactorEnabled,
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.workspaceAuthConfig.id, ROW_ID));
+
+  invalidateAuthSettingsCache();
+}
+
 let cache: ResolvedAuthSettings | null = null;
 
 export function invalidateAuthSettingsCache(): void {
@@ -62,19 +87,9 @@ function mergeEnvFallback(row: ResolvedAuthSettings): ResolvedAuthSettings {
   const githubClientId = row.githubClientId || env.githubClientId;
   const githubClientSecret = row.githubClientSecret ?? env.githubClientSecret;
 
-  /** Credentials or env flag enable OAuth; avoids DB row stuck at defaults while Vercel has secrets. */
-  const googleAuthEnabled =
-    row.googleAuthEnabled ||
-    env.googleAuthEnabled ||
-    Boolean(googleClientId && googleClientSecret);
-  const microsoftAuthEnabled =
-    row.microsoftAuthEnabled ||
-    env.microsoftAuthEnabled ||
-    Boolean(microsoftClientId && microsoftClientSecret);
-  const githubAuthEnabled =
-    row.githubAuthEnabled ||
-    env.githubAuthEnabled ||
-    Boolean(githubClientId && githubClientSecret);
+  const googleAuthEnabled = row.googleAuthEnabled || env.googleAuthEnabled;
+  const microsoftAuthEnabled = row.microsoftAuthEnabled || env.microsoftAuthEnabled;
+  const githubAuthEnabled = row.githubAuthEnabled || env.githubAuthEnabled;
 
   return {
     ...row,
@@ -104,7 +119,10 @@ export async function ensureAuthSettingsRow(): Promise<void> {
     .where(eq(schema.workspaceAuthConfig.id, ROW_ID))
     .limit(1);
 
-  if (existing[0]) return;
+  if (existing[0]) {
+    await migrateLegacyAuthFlagsIfNeeded(existing[0]);
+    return;
+  }
 
   const env = defaultsFromEnv();
   await db.insert(schema.workspaceAuthConfig).values({

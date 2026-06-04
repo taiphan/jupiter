@@ -1,5 +1,16 @@
 import { z } from 'zod';
-import { DEFAULT_TEST_EMAIL } from '@/lib/auth-config-constants';
+import {
+  DEFAULT_AUTH_PROVIDER_ENABLED,
+  DEFAULT_TEST_EMAIL,
+  DEFAULT_TWO_FACTOR_ENABLED,
+} from '@/lib/auth-config-constants';
+
+function envFlagEnabled(name: string, defaultValue = DEFAULT_AUTH_PROVIDER_ENABLED): boolean {
+  const raw = process.env[name]?.trim().toLowerCase();
+  if (raw === 'false' || raw === '0' || raw === 'no') return false;
+  if (raw === 'true' || raw === '1' || raw === 'yes') return true;
+  return defaultValue;
+}
 
 export const emailProviderSchema = z.enum(['console', 'gmail', 'smtp']);
 
@@ -99,16 +110,16 @@ export function defaultsFromEnv(): ResolvedAuthSettings {
     emailFrom: process.env.EMAIL_FROM?.trim() || DEFAULT_TEST_EMAIL,
     mailRedirectTo: process.env.MAIL_REDIRECT_TO?.trim() || DEFAULT_TEST_EMAIL,
     testEmailTo: process.env.TEST_EMAIL_TO?.trim() || DEFAULT_TEST_EMAIL,
-    googleAuthEnabled: process.env.AUTH_GOOGLE_ENABLED === 'true',
+    googleAuthEnabled: envFlagEnabled('AUTH_GOOGLE_ENABLED'),
     googleClientId: process.env.GOOGLE_CLIENT_ID?.trim() ?? '',
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET?.trim() || null,
     googleAllowedHd: process.env.GOOGLE_ALLOWED_HD?.trim() || null,
-    twoFactorEnabled: process.env.AUTH_2FA_ENABLED !== 'false',
-    microsoftAuthEnabled: process.env.AUTH_MICROSOFT_ENABLED === 'true',
+    twoFactorEnabled: envFlagEnabled('AUTH_2FA_ENABLED', DEFAULT_TWO_FACTOR_ENABLED),
+    microsoftAuthEnabled: envFlagEnabled('AUTH_MICROSOFT_ENABLED'),
     microsoftClientId: process.env.MICROSOFT_CLIENT_ID?.trim() ?? '',
     microsoftClientSecret: process.env.MICROSOFT_CLIENT_SECRET?.trim() || null,
     microsoftTenantId: process.env.MICROSOFT_TENANT_ID?.trim() || 'common',
-    githubAuthEnabled: process.env.AUTH_GITHUB_ENABLED === 'true',
+    githubAuthEnabled: envFlagEnabled('AUTH_GITHUB_ENABLED'),
     githubClientId: process.env.GITHUB_CLIENT_ID?.trim() ?? '',
     githubClientSecret: process.env.GITHUB_CLIENT_SECRET?.trim() || null,
   };
