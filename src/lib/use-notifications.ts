@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useIssuesStore } from './issues-store';
 import { useNotificationsStore } from './notifications-store';
 import { useAuthStore } from './auth-store';
+import { isWorkspaceOnline } from './workspace-mode';
 import type { ActivityEntry, Issue } from './types';
 
 export interface Notification {
@@ -14,9 +15,7 @@ export interface Notification {
 }
 
 /**
- * Build the current user's notification feed from the activity log:
- *  - Activity on issues they are assigned to or reported
- *  - Excludes actions the user performed themselves
+ * Notification feed: from API when Postgres is online, else derived from activity.
  */
 export function useNotifications(): {
   notifications: Notification[];
@@ -25,17 +24,30 @@ export function useNotifications(): {
   const user = useAuthStore((s) => s.user);
   const issues = useIssuesStore((s) => s.issues);
   const activity = useIssuesStore((s) => s.activity);
+  const apiFeed = useNotificationsStore((s) =>
+    user ? s.apiFeedByUser[user.id] : undefined,
+  );
+  const apiUnread = useNotificationsStore((s) =>
+    user ? s.apiUnreadByUser[user.id] : undefined,
+  );
   const readByUser = useNotificationsStore((s) => s.readByUser);
 
   return useMemo(() => {
     if (!user) return { notifications: [], unreadCount: 0 };
+
+    if (isWorkspaceOnline() && apiFeed) {
+      return {
+        notifications: apiFeed,
+        unreadCount: apiUnread ?? apiFeed.filter((n) => !n.read).length,
+      };
+    }
 
     const issueById = new Map(issues.map((i) => [i.id, i]));
     const readSet = new Set(readByUser[user.id] ?? []);
 
     const relevant = activity
       .filter((a) => {
-        if (a.actorId === user.id) return false; // not your own actions
+        if (a.actorId === user.id) return false;
         const issue = issueById.get(a.issueId);
         if (!issue) return false;
         return issue.assigneeId === user.id || issue.reporterId === user.id;
@@ -54,5 +66,5 @@ export function useNotifications(): {
       notifications,
       unreadCount: notifications.filter((n) => !n.read).length,
     };
-  }, [user, issues, activity, readByUser]);
+  }, [user, issues, activity, readByUser, apiFeed, apiUnread]);
 }

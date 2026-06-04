@@ -4,6 +4,9 @@ import type { Sprint, SprintState } from './types';
 import { SEED_SPRINTS } from './seed';
 import { uid } from './utils';
 import { useIssuesStore } from './issues-store';
+import { isWorkspaceOnline } from './workspace-mode';
+import { appendBurndownSnapshotApi } from './persistence-api';
+import { recordWorkspaceEvent } from './record-workspace-event';
 
 interface SprintsState {
   sprints: Sprint[];
@@ -57,6 +60,12 @@ export const useSprintsStore = create<SprintsState>()(
           state: 'planned',
         };
         set((s) => ({ sprints: [...s.sprints, sprint] }));
+        recordWorkspaceEvent({
+          projectId,
+          kind: 'sprint.created',
+          message: `Created ${sprint.name}`,
+          metadata: { sprintId: sprint.id },
+        });
         return sprint;
       },
 
@@ -96,6 +105,13 @@ export const useSprintsStore = create<SprintsState>()(
             return sp;
           }),
         }));
+
+        recordWorkspaceEvent({
+          projectId: sprint.projectId,
+          kind: 'sprint.started',
+          message: `Started sprint ${sprint.name}`,
+          metadata: { sprintId: id },
+        });
       },
 
       completeSprint: (id, options = {}) => {
@@ -115,24 +131,36 @@ export const useSprintsStore = create<SprintsState>()(
           );
         }
 
-        // Snapshot burndown points (story points remaining over time) — simple end snapshot
         const remaining = incomplete.reduce((sum, i) => sum + (i.storyPoints ?? 0), 0);
+        const scopePoints = sprintIssues.reduce((sum, i) => sum + (i.storyPoints ?? 0), 0);
+        const snapshotDate = nowIso();
+
         set((s) => ({
           sprints: s.sprints.map((sp) =>
             sp.id === id
-              ? { ...sp, state: 'completed' as SprintState, completedAt: nowIso() }
+              ? { ...sp, state: 'completed' as SprintState, completedAt: snapshotDate }
               : sp,
           ),
           burndownSnapshots: {
             ...s.burndownSnapshots,
             [id]: [
               ...(s.burndownSnapshots[id] ?? []),
-              { date: nowIso(), remaining },
+              { date: snapshotDate, remaining },
             ],
           },
         }));
 
-        // Pin the completed-count for velocity reporting (no separate field needed)
+        if (isWorkspaceOnline()) {
+          void appendBurndownSnapshotApi(id, remaining, scopePoints);
+        }
+
+        recordWorkspaceEvent({
+          projectId: sprint.projectId,
+          kind: 'sprint.completed',
+          message: `Completed sprint ${sprint.name}`,
+          metadata: { sprintId: id, remaining, completed: completed.length },
+        });
+
         return { completed: completed.length, incomplete: incomplete.length };
       },
 

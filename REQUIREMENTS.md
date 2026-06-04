@@ -53,7 +53,8 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Attachments | Attachments section | ✅ | Size-validated upload |
 | Issue links | blocks / relates / duplicates | ✅ | Cycle detection on blocks |
 | Custom fields | Fields tab + per-project defs | ✅ | text, number, select, date, user |
-| Watchers | — | ⬜ | |
+| Watchers | — | ⬜ | v1.9 |
+| In-app notifications (read state) | Bell + activity-derived feed | 🟡 | Feed from `activity` in Postgres; read state localStorage only — **v1.8** |
 | Votes | — | — | |
 | Due dates / fix versions | — | ⬜ | |
 | Subtasks on board | Parent/child in model | 🟡 | UI for subtask tree limited |
@@ -76,7 +77,7 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 
 | Jira capability | Jupiter | Status | Notes |
 |-----------------|---------|--------|-------|
-| Burndown | Sprint + project reports | ✅ | Accessible chart variants |
+| Burndown | Sprint + project reports | 🟡 | Charts work; snapshot history in localStorage only — **v1.8:** `burndown_snapshots` + API |
 | Velocity | Rolling velocity chart | ✅ | |
 | Cumulative flow | Reports view | ✅ | |
 | **Custom dashboards per space** | — | ⬜ | Atlassian Spring 2026: widgets + Rovo insights |
@@ -125,7 +126,7 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Roles & permissions | admin / lead / member / viewer | ✅ | Route + action guards |
 | Project settings | Settings tab | ✅ | Name, key, lead, members |
 | Workflow editor (visual) | Status columns via board config | 🟡 | Column mapping only; no transition rules UI |
-| Audit log | `/audit` | ✅ | Admin/viewer access |
+| Audit log | `/audit` | 🟡 | Issue `activity` in Postgres via workspace sync; read via client store — **v1.8:** paginated API + optional workspace events |
 | **Delegated permissions / templates** | — | ⬜ | Atlassian Spring 2026 |
 | **Beta feature toggles** | — | ⬜ | |
 | Data residency / compliance | — | — | Enterprise Jira only |
@@ -139,7 +140,7 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Automation rules (if X then Y) | — | ⬜ | Jira: status triggers, reminders |
 | **AI agents in workflow** | — | ⬜ | Atlassian Spring 2026: assign work to agents |
 | GitHub / Bitbucket / Slack | — | ⬜ | Jira: 3000+ marketplace integrations |
-| Webhooks / REST API | Auth API + Drizzle scaffold | 🟡 | Session API today; issue CRUD API v1.7+ |
+| Webhooks / REST API | Auth + workspace snapshot API | 🟡 | `/api/workspace` bulk sync; targeted APIs in **v1.8** |
 
 ---
 
@@ -193,24 +194,37 @@ Priority order based on Atlassian core UX and Spring 2026 themes:
 
 **Spec:** [docs/v1.7-google-sign-in-requirements.md](./docs/v1.7-google-sign-in-requirements.md)
 
-### v1.8 — Dashboards & polish
+### v1.8 — Persistence: notifications, audit, burndown ✅
+
+**Spec:** [docs/v1.8-persistence-requirements.md](./docs/v1.8-persistence-requirements.md) · **Tasks:** [tasks/v1.8-persistence-todo.md](./tasks/v1.8-persistence-todo.md)
+
+**Recommendation:** persist in **PostgreSQL**, access via **HTTP API** (not direct DB from the client).
+
+| Area | v1.8 deliverable |
+|------|------------------|
+| Notifications | `notification_reads` + `/api/notifications` (feed still from `activity`) |
+| Audit log | Paginated `GET /api/audit`; optional `workspace_events` for project/sprint actions |
+| Burndown | `burndown_snapshots` + `/api/sprints/:id/burndown` |
+
+Issue/project data continues via `/api/workspace` snapshot sync (shipped).
+
+### v1.9 — Dashboards & polish
 - Customizable project dashboards (burndown, velocity, CFD widgets)
 - Enhanced For You page (what changed, what’s due)
 - CSV export for issues and reports
 - Watchers on issues
+- Email notification hooks (issue events, not auth)
 
-### v1.9 — Scale & collaboration
+### v2.0 — Scale & collaboration
 - Project templates (Scrum, Kanban, blank)
 - Guest/read-only external collaborators
-- Email notification hooks (issue events, not auth)
-- Full REST API for issues/projects/sprints
+- Granular REST CRUD per resource (replace full snapshot PUT where needed)
 - Workspace domain lock for Google (`hd` claim) — optional
 
-### v2.0 — Automations & platform
+### v2.1 — Automations & platform
 - Rule builder (trigger → condition → action)
 - Webhooks
 - Integration stubs (GitHub PR linking)
-- Postgres-backed issue sync (multi-user workspace data)
 
 ### v2.x — AI (optional)
 - NL → JQL assist

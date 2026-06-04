@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import type { Project, Member } from './types';
 import { SEED_MEMBERS, SEED_PROJECTS } from './seed';
 import { uid } from './utils';
+import { recordWorkspaceEvent } from './record-workspace-event';
+import { useAuthStore } from './auth-store';
 
 interface ProjectsState {
   projects: Project[];
@@ -49,6 +51,13 @@ export const useProjectsStore = create<ProjectsState>()(
           issueCounter: 0,
         };
         set((s) => ({ projects: [...s.projects, project] }));
+        const actor = useAuthStore.getState().user;
+        recordWorkspaceEvent({
+          projectId: project.id,
+          kind: 'project.created',
+          message: `Created project ${project.key}`,
+          metadata: { actorId: actor?.id },
+        });
         return project;
       },
 

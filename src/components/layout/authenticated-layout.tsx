@@ -8,6 +8,7 @@ import { VerifyEmailPanel } from '@/components/auth/verify-email-panel';
 import { GlobalTopNav } from './global-top-nav';
 import { RouteGuard } from './route-guard';
 import { WorkspaceSync } from '@/components/workspace/workspace-sync';
+import { PersistenceSync } from '@/components/workspace/persistence-sync';
 
 const PUBLIC_AUTH_PATHS = new Set([
   '/login',
@@ -60,6 +61,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   return (
     <div className="flex h-screen flex-col">
       <WorkspaceSync />
+      <PersistenceSync />
       <GlobalTopNav />
       <RouteGuard>
         <div className="flex flex-1 overflow-hidden">{children}</div>

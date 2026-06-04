@@ -227,6 +227,57 @@ export const quickFilters = pgTable(
   (t) => [index('quick_filters_project_idx').on(t.projectId)],
 );
 
+// ─── v1.8 persistence ───────────────────────────────────────────────────────
+
+export const notificationReads = pgTable(
+  'notification_reads',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    activityId: text('activity_id')
+      .notNull()
+      .references(() => activity.id, { onDelete: 'cascade' }),
+    readAt: timestamp('read_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.activityId] }),
+    index('notification_reads_user_idx').on(t.userId),
+  ],
+);
+
+export const workspaceEvents = pgTable(
+  'workspace_events',
+  {
+    id: text('id').primaryKey(),
+    projectId: text('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+    actorId: text('actor_id').notNull().references(() => users.id),
+    kind: text('kind').notNull(),
+    message: text('message').notNull(),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('workspace_events_project_idx').on(t.projectId),
+    index('workspace_events_created_idx').on(t.createdAt),
+  ],
+);
+
+export const burndownSnapshots = pgTable(
+  'burndown_snapshots',
+  {
+    id: text('id').primaryKey(),
+    sprintId: text('sprint_id')
+      .notNull()
+      .references(() => sprints.id, { onDelete: 'cascade' }),
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull(),
+    remainingPoints: integer('remaining_points').notNull().default(0),
+    scopePoints: integer('scope_points'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('burndown_snapshots_sprint_idx').on(t.sprintId, t.recordedAt)],
+);
+
 export const issueLinks = pgTable(
   'issue_links',
   {

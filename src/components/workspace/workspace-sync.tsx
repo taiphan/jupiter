@@ -7,6 +7,7 @@ import {
   isWorkspaceHydrating,
   isWorkspaceOnline,
   markSkipNextWorkspaceSync,
+  setPersistenceReady,
   setWorkspaceHydrating,
   setWorkspaceOnline,
 } from '@/lib/workspace-mode';
@@ -52,6 +53,7 @@ export function WorkspaceSync() {
       if (result.mode === 'offline') {
         setWorkspaceOnline(false);
         setWorkspaceHydrating(false);
+        setPersistenceReady(false);
         return;
       }
 
@@ -73,6 +75,7 @@ export function WorkspaceSync() {
       }
 
       setWorkspaceHydrating(false);
+      setPersistenceReady(true);
     })();
 
     return () => {

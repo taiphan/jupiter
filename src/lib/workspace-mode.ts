@@ -1,6 +1,7 @@
 /** True when /api/workspace is available and hydrated. */
 let workspaceOnline = false;
 let hydrating = false;
+let persistenceReady = false;
 let skipNextSync = false;
 
 export function isWorkspaceOnline(): boolean {
@@ -9,6 +10,15 @@ export function isWorkspaceOnline(): boolean {
 
 export function setWorkspaceOnline(value: boolean): void {
   workspaceOnline = value;
+  if (!value) persistenceReady = false;
+}
+
+export function isPersistenceReady(): boolean {
+  return persistenceReady && workspaceOnline;
+}
+
+export function setPersistenceReady(value: boolean): void {
+  persistenceReady = value;
 }
 
 export function isWorkspaceHydrating(): boolean {

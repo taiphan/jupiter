@@ -118,7 +118,7 @@ npm run deploy:down   # stop stack
 
 Login uses the **auth API** when Postgres is available (OrbStack deploy); otherwise it falls back to client-only demo accounts.
 
-When Postgres is configured, **`/api/workspace`** loads and saves projects, issues, sprints, comments, links, and custom fields (debounced). See [docs/DATABASE.md](./docs/DATABASE.md).
+When Postgres is configured, **`/api/workspace`** loads and saves projects, issues, sprints, comments, links, and custom fields (debounced). See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) and [docs/DATABASE.md](./docs/DATABASE.md).
 
 ## Demo accounts (email sign-in)
 

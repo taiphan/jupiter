@@ -8,5 +8,6 @@ export async function GET() {
   return json({
     emailAuth: true,
     googleAuth: isGoogleAuthEnabled(),
+    workspacePersistence: true,
   });
 }

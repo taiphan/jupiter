@@ -44,6 +44,11 @@ import { IssueDialog } from '@/components/issue/issue-dialog';
 import { UserAvatar } from '@/components/issue/user-avatar';
 import { useNotifications } from '@/lib/use-notifications';
 import { useNotificationsStore } from '@/lib/notifications-store';
+import { isWorkspaceOnline } from '@/lib/workspace-mode';
+import {
+  markAllNotificationsReadApi,
+  markNotificationsReadApi,
+} from '@/lib/persistence-api';
 import { initials, timeAgo } from '@/lib/utils';
 
 export function GlobalTopNav() {
@@ -400,7 +405,11 @@ export function GlobalTopNav() {
                     <button
                       type="button"
                       className="text-[11px] text-primary hover:underline cursor-pointer"
-                      onClick={() => markAllRead(user.id, notifications.map((n) => n.activity.id))}
+                      onClick={() => {
+                        const ids = notifications.map((n) => n.activity.id);
+                        markAllRead(user.id, ids);
+                        if (isWorkspaceOnline()) void markAllNotificationsReadApi();
+                      }}
                     >
                       Mark all read
                     </button>
@@ -421,6 +430,7 @@ export function GlobalTopNav() {
                       className="cursor-pointer items-start gap-2 py-2"
                       onClick={() => {
                         markRead(user.id, n.activity.id);
+                        if (isWorkspaceOnline()) void markNotificationsReadApi([n.activity.id]);
                         setOpenIssueId(n.issue.id);
                       }}
                     >

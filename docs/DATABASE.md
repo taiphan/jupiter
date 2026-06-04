@@ -2,6 +2,8 @@
 
 Workspace data (projects, issues, sprints, etc.) is stored in **PostgreSQL** via Drizzle ORM when `DATABASE_URL` or Vercel `POSTGRES_URL` is set. The browser still keeps a **Zustand + localStorage** cache for offline dev; production loads and saves through `/api/workspace`.
 
+For deployment diagrams and request flows, see **[ARCHITECTURE.md](./ARCHITECTURE.md)**.
+
 ## Entity relationship (core)
 
 ```mermaid
@@ -61,13 +63,23 @@ erDiagram
 - Unique on `(type, from_issue_id, to_issue_id)`.
 - CHECK prevents self-links.
 
-## Not in Postgres (v1.8+)
+## v1.8 tables (persistence APIs)
 
-| Feature | Today |
-|---------|--------|
-| Notifications | `localStorage` only |
-| Audit log (workspace) | `localStorage` only |
-| Burndown snapshots | `localStorage` only (`sprints-store`) |
+| Table | Purpose |
+|-------|---------|
+| `notification_reads` | Per-user read state for activity-based notifications |
+| `workspace_events` | Project/sprint workspace audit (complements issue `activity`) |
+| `burndown_snapshots` | Per-sprint remaining-points time series |
+
+| API | Purpose |
+|-----|---------|
+| `GET /api/notifications` | Feed + read flags |
+| `POST /api/notifications/read` | Mark activity ids read |
+| `GET /api/audit` | Paginated audit (`?cursor=&limit=&projectId=…`) |
+| `GET|PUT /api/sprints/:id/burndown` | Snapshot history |
+| `POST /api/workspace/events` | Record workspace-level events |
+
+See **[v1.8-persistence-requirements.md](./v1.8-persistence-requirements.md)**.
 
 ## API
 
