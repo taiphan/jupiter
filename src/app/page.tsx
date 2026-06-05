@@ -15,6 +15,7 @@ import { IssueRow } from '@/components/issue/issue-row';
 import { IssueDialog } from '@/components/issue/issue-dialog';
 import type { Issue } from '@/lib/types';
 import { STATUS_LABELS } from '@/lib/types';
+import { isWatching } from '@/lib/derive/watchers';
 import { timeAgo } from '@/lib/utils';
 
 export default function MyWorkPage() {
@@ -39,6 +40,21 @@ export default function MyWorkPage() {
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       .slice(0, 5),
     [issues, user?.id],
+  );
+
+  const myWatching = useMemo(
+    () => issues
+      .filter(
+        (i) =>
+          user &&
+          isWatching(i, user.id) &&
+          i.status !== 'done' &&
+          i.assigneeId !== user.id &&
+          i.reporterId !== user.id,
+      )
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .slice(0, 5),
+    [issues, user],
   );
 
   const recentlyUpdated = useMemo(
@@ -102,6 +118,24 @@ export default function MyWorkPage() {
           </Card>
 
           <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Watching</CardTitle>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Open issues you follow (excluding assigned/reported)
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {myWatching.length === 0 ? (
+                  <EmptyMessage>Watch issues from the issue panel to see them here.</EmptyMessage>
+                ) : (
+                  myWatching.map((i) => (
+                    <IssueRow key={i.id} issue={i} onClick={handleOpen} showProject />
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm">Reported by me</CardTitle>

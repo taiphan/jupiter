@@ -34,6 +34,7 @@ const KIND_LABELS: Record<ActivityKind | 'all', string> = {
   comment: 'Comment',
   'link-added': 'Link added',
   'link-removed': 'Link removed',
+  watcher: 'Watchers',
 };
 
 const WS_KIND_LABELS: Record<string, string> = {

@@ -14,6 +14,11 @@ import { STATUS_LABELS, ISSUE_TYPE_LABELS, PRIORITY_LABELS } from './types';
 import { SEED_ISSUES, SEED_COMMENTS, SEED_ACTIVITY } from './seed';
 import { uid } from './utils';
 import { useProjectsStore } from './projects-store';
+import {
+  addWatcherIds,
+  defaultWatchersForIssue,
+  removeWatcherId,
+} from './derive/watchers';
 
 const RANK_STEP = 1000;
 /** Max attachment size kept in localStorage (1.5 MB raw → ~2 MB base64). */
@@ -85,6 +90,10 @@ interface IssuesState {
   getCommentsForIssue: (issueId: string) => Comment[];
   getActivityForIssue: (issueId: string) => ActivityEntry[];
 
+  toggleWatch: (issueId: string, userId: string) => void;
+  addWatcher: (issueId: string, watcherId: string, actorId: string) => void;
+  removeWatcher: (issueId: string, watcherId: string, actorId: string) => void;
+
   reseed: () => void;
 }
 
@@ -152,6 +161,7 @@ export const useIssuesStore = create<IssuesState>()(
           storyPoints,
           dueDate,
           rank: lastRank + RANK_STEP,
+          watcherIds: defaultWatchersForIssue(reporterId, assigneeId),
           createdAt: nowIso(),
           updatedAt: nowIso(),
         };
@@ -168,7 +178,19 @@ export const useIssuesStore = create<IssuesState>()(
           const before = s.issues.find((i) => i.id === id);
           if (!before) return s;
 
-          const after: Issue = { ...before, ...patch, updatedAt: nowIso() };
+          const beforeWatchers = before.watcherIds ?? [];
+
+          const after: Issue = {
+            ...before,
+            ...patch,
+            watcherIds: patch.watcherIds ?? beforeWatchers,
+            updatedAt: nowIso(),
+          };
+
+          if ('assigneeId' in patch && patch.assigneeId && patch.assigneeId !== before.assigneeId) {
+            after.watcherIds = addWatcherIds(after.watcherIds, patch.assigneeId);
+          }
+
           let activity = s.activity;
 
           if (patch.status && patch.status !== before.status) {
@@ -202,6 +224,12 @@ export const useIssuesStore = create<IssuesState>()(
           if ('dueDate' in patch && patch.dueDate !== before.dueDate) {
             activity = pushActivity(activity, id, actorId, 'label',
               patch.dueDate ? `Due date set to ${patch.dueDate}` : 'Due date cleared');
+          }
+          if (
+            patch.watcherIds &&
+            JSON.stringify(patch.watcherIds) !== JSON.stringify(beforeWatchers)
+          ) {
+            activity = pushActivity(activity, id, actorId, 'watcher', 'Watchers updated');
           }
 
           return {
@@ -321,9 +349,54 @@ export const useIssuesStore = create<IssuesState>()(
           .activity.filter((a) => a.issueId === issueId)
           .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
 
+      toggleWatch: (issueId, userId) => {
+        const issue = get().issues.find((i) => i.id === issueId);
+        if (!issue) return;
+        const next = issue.watcherIds.includes(userId)
+          ? removeWatcherId(issue.watcherIds, userId)
+          : addWatcherIds(issue.watcherIds, userId);
+        get().updateIssue(issueId, { watcherIds: next }, userId);
+      },
+
+      addWatcher: (issueId, watcherId, actorId) => {
+        const issue = get().issues.find((i) => i.id === issueId);
+        if (!issue || issue.watcherIds.includes(watcherId)) return;
+        get().updateIssue(
+          issueId,
+          { watcherIds: addWatcherIds(issue.watcherIds, watcherId) },
+          actorId,
+        );
+      },
+
+      removeWatcher: (issueId, watcherId, actorId) => {
+        const issue = get().issues.find((i) => i.id === issueId);
+        if (!issue || !issue.watcherIds.includes(watcherId)) return;
+        get().updateIssue(
+          issueId,
+          { watcherIds: removeWatcherId(issue.watcherIds, watcherId) },
+          actorId,
+        );
+      },
+
       reseed: () => set({ issues: SEED_ISSUES, comments: SEED_COMMENTS, activity: SEED_ACTIVITY, attachments: [] }),
     }),
-    { name: 'jupiter-issues' },
+    {
+      name: 'jupiter-issues',
+      merge: (persisted, current) => {
+        const p = persisted as Partial<IssuesState> | undefined;
+        if (!p?.issues) return current as IssuesState;
+        return {
+          ...(current as IssuesState),
+          ...p,
+          issues: p.issues.map((i) => ({
+            ...i,
+            watcherIds:
+              i.watcherIds ??
+              defaultWatchersForIssue(i.reporterId, i.assigneeId),
+          })),
+        };
+      },
+    },
   ),
 );
 

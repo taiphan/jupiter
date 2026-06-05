@@ -53,8 +53,8 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Attachments | Attachments section | ✅ | Size-validated upload |
 | Issue links | blocks / relates / duplicates | ✅ | Cycle detection on blocks |
 | Custom fields | Fields tab + per-project defs | ✅ | text, number, select, date, user |
-| Watchers | — | ⬜ | v1.9 |
-| In-app notifications (read state) | Bell + activity-derived feed | 🟡 | Feed from `activity` in Postgres; read state localStorage only — **v1.8** |
+| Watchers | Issue panel + notifications | ✅ | v1.12 — watch/unwatch, add/remove, notify on activity |
+| In-app notifications (read state) | Bell + activity-derived feed | 🟡 | Feed from `activity`; watchers in v1.12; read state via API (v1.8) |
 | Votes | — | — | |
 | Due dates / fix versions | — | ⬜ | |
 | Subtasks on board | Parent/child in model | 🟡 | UI for subtask tree limited |
@@ -241,7 +241,8 @@ Atlassian’s 2026 direction ([Rovo in Jira](https://www.atlassian.com/software/
 | **v1.7** | Google Sign-In (OAuth 2.0 + PKCE) |
 | **v1.8** | Workspace Postgres sync + persistence APIs |
 | **v1.10** | Gmail SMTP verification mail + TOTP 2FA ✅ |
-| **v1.11** | Auth breadth: Microsoft/GitHub OAuth, PAT, session revoke (planned) |
+| **v1.11** | Auth breadth: Microsoft/GitHub OAuth, PAT, session revoke ✅ |
+| **v1.12** | Issue watchers + notification fan-out ✅ |
 | **v2.0** | Enterprise identity: SAML, OIDC, SCIM, org policy (planned) |
 
 ---
@@ -292,23 +293,31 @@ Issue/project data continues via `/api/workspace` snapshot sync (shipped).
 
 > Use **SMTP to send** mail. IMAP is for reading inbox — not used in v1.10.
 
-### v1.11 — Auth breadth ⬜
+### v1.11 — Auth breadth ✅
 
-**Spec:** [docs/v2.0-auth-enterprise-breadth-requirements.md](./docs/v2.0-auth-enterprise-breadth-requirements.md) (Part A) · **Tasks:** [tasks/v2.0-auth-enterprise-breadth-todo.md](./tasks/v2.0-auth-enterprise-breadth-todo.md)
+**Spec:** [docs/v2.0-auth-enterprise-breadth-requirements.md](./docs/v2.0-auth-enterprise-breadth-requirements.md) (Part A)
 
 | Area | Deliverable |
 |------|-------------|
-| **Social login** | Microsoft Entra, GitHub OAuth (+ Apple stretch) |
+| **Social login** | Microsoft Entra, GitHub OAuth |
 | **Account** | Set password for OAuth-only users |
 | **Sessions** | List / revoke sessions; sign out everywhere |
 | **API** | Personal access tokens with scopes |
-| **Hardening** | CAPTCHA, HIBP (stretch) |
+
+### v1.12 — Issue watchers ✅
+
+**Spec:** [docs/v1.12-watchers-requirements.md](./docs/v1.12-watchers-requirements.md) · **Tasks:** [tasks/v1.12-watchers-todo.md](./tasks/v1.12-watchers-todo.md)
+
+| Area | Deliverable |
+|------|-------------|
+| **Watchers** | `watcherIds` on issues; watch/unwatch UI |
+| **Notifications** | Bell feed for watchers (API + client) |
+| **My Work** | Watching section |
 
 ### v1.9 — Dashboards & polish
 - Customizable project dashboards (burndown, velocity, CFD widgets)
 - Enhanced For You page (what changed, what’s due)
 - CSV export for issues and reports
-- Watchers on issues
 - Email notification hooks (issue events, not auth)
 
 ### v2.0 — Scale, collaboration & enterprise identity ⬜

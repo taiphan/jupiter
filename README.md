@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.10-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.12-blue" alt="Version" />
   <img src="https://img.shields.io/badge/Next.js-16-black" alt="Next.js" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind-4-06b6d4" alt="Tailwind" />
@@ -18,9 +18,9 @@
 Jupiter mirrors core **Jira Software** workflows — projects, issues, boards, sprints, and reports — using Next.js 16, Tailwind v4, shadcn/ui, and Zustand persisted state with role-based access.
 
 Full feature mapping vs [Atlassian Jira](https://www.atlassian.com/software/jira/features): see **[REQUIREMENTS.md](./REQUIREMENTS.md)**.  
-**Changelog:** [CHANGELOG.md](./CHANGELOG.md) · **Auth spec:** [v1.10](./docs/v1.10-auth-security-requirements.md)
+**Changelog:** [CHANGELOG.md](./CHANGELOG.md) · **Watchers:** [v1.12](./docs/v1.12-watchers-requirements.md) · **Auth:** [v1.10](./docs/v1.10-auth-security-requirements.md)
 
-## Features (v1.10)
+## Features (v1.12)
 
 ### Plan & track
 - **Projects** — keys, leads, members, settings
@@ -33,9 +33,9 @@ Full feature mapping vs [Atlassian Jira](https://www.atlassian.com/software/jira
 - **Timeline** — project timeline view
 
 ### Collaborate
-- **Issue detail** — comments, @mentions, activity log, attachments, issue links (blocks / relates / duplicates)
-- **Notifications** — in-app bell for mentions and assignments
-- **My Work** — assigned, reported, and recently updated issues
+- **Issue detail** — comments, @mentions, activity log, attachments, issue links, **watchers**
+- **Notifications** — in-app bell for mentions, assignments, and **watched issues**
+- **My Work** — assigned, reported, **watching**, and recently updated issues
 
 ### Search & configure
 - **Filters** — basic filters + JQL-lite query mode (incl. `dueDate`)
@@ -50,15 +50,14 @@ Full feature mapping vs [Atlassian Jira](https://www.atlassian.com/software/jira
 
 ### Platform
 - **Role-based access** — admin / lead / member / viewer
-- **Auth** — email + password, verification, password reset; Google Sign-In (OAuth 2.0 + PKCE)
-- **TOTP 2FA** — authenticator app, backup codes, `/login/2fa` step
-- **Gmail SMTP** — production verify/reset mail (`EMAIL_PROVIDER=gmail` or admin Settings)
-- **Admin auth settings** — Settings → Authentication & email (SMTP, Google, app URL, test send)
+- **Auth** — email + password, Google / Microsoft / GitHub OAuth, TOTP 2FA, PATs, session revoke
+- **Admin auth settings** — Settings → Authentication & email (SMTP, OAuth, app URL, test send)
 - **Workspace Postgres sync** — `/api/workspace`, notifications, audit, burndown APIs (v1.8)
+- **Issue watchers** — watch/unwatch, notification fan-out (v1.12)
 - **Light / dark theme** — Atlassian-style UI
 
 ### Planned next
-- **v1.11** — Microsoft/GitHub OAuth, PAT, session revoke — see [REQUIREMENTS.md](./REQUIREMENTS.md)
+- **v1.9** — dashboards, CSV export, email hooks — see [REQUIREMENTS.md](./REQUIREMENTS.md)
 
 ## Tech Stack
 

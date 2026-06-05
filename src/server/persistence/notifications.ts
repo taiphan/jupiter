@@ -1,4 +1,4 @@
-import { and, desc, eq, ne, or } from 'drizzle-orm';
+import { and, desc, eq, ne, or, sql } from 'drizzle-orm';
 import { getDb } from '@/server/db/client';
 import * as schema from '@/server/db/schema';
 import { mapActivityRow } from '@/server/db/mappers';
@@ -31,7 +31,11 @@ export async function getNotificationFeed(userId: string): Promise<{
     .where(
       and(
         ne(schema.activity.actorId, userId),
-        or(eq(schema.issues.assigneeId, userId), eq(schema.issues.reporterId, userId)),
+        or(
+          eq(schema.issues.assigneeId, userId),
+          eq(schema.issues.reporterId, userId),
+          sql`${schema.issues.watcherIds} @> ${JSON.stringify([userId])}::jsonb`,
+        ),
       ),
     )
     .orderBy(desc(schema.activity.createdAt))

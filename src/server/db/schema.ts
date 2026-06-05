@@ -219,6 +219,7 @@ export const issues = pgTable(
     /** Calendar day (YYYY-MM-DD) for list/calendar views */
     dueDate: text('due_date'),
     customFields: jsonb('custom_fields').$type<Record<string, string | number | boolean>>(),
+    watcherIds: jsonb('watcher_ids').$type<string[]>().notNull().default([]),
     rank: doublePrecision('rank').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

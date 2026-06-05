@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.12.0] — 2026-06-04
+
+### Issue watchers (v1.12)
+
+- **`watcherIds`** on issues — Postgres `watcher_ids` jsonb + workspace sync
+- **Issue panel** — Watch / Unwatch, add/remove watchers (editors)
+- **Notifications** — bell feed includes watched issues (client + `/api/notifications`)
+- **My Work** — **Watching** section for followed open issues
+- Reporter + assignee auto-watch on create; new assignee auto-added
+- Activity kind `watcher` for watcher list changes
+
+### Ops
+
+- Run `npm run db:push:host` after upgrade
+
 ## [1.11.0] — 2026-06-03
 
 ### Auth breadth (v1.11)

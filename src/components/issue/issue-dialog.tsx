@@ -37,6 +37,7 @@ import { formatDueDate, isOverdue } from '@/lib/derive/due-date';
 import { IssueTypeIcon } from './issue-icon';
 import { PriorityIcon } from './priority-icon';
 import { UserAvatar } from './user-avatar';
+import { IssueWatchers } from './issue-watchers';
 
 interface IssueDialogProps {
   issueId: string | null;
@@ -369,6 +370,14 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
               <span className="text-xs">{reporter?.name ?? 'Unknown'}</span>
             </div>
           </FieldRow>
+
+          <IssueWatchers
+            issueId={issue.id}
+            watcherIds={issue.watcherIds ?? []}
+            projectMembers={projectMembers}
+            currentUserId={user.id}
+            canEdit={canEdit}
+          />
 
           <Separator />
 

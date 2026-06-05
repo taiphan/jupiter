@@ -1,5 +1,6 @@
 import type { Project, Issue, Comment, ActivityEntry, Member, Sprint } from './types';
 import { DEMO_USERS } from './auth-store';
+import { defaultWatchersForIssue } from './derive/watchers';
 
 export const SEED_MEMBERS: Member[] = DEMO_USERS.map((u) => ({
   id: u.user.id,
@@ -50,7 +51,7 @@ const now = new Date('2026-06-02T10:00:00.000Z').toISOString();
 const earlier = new Date('2026-05-28T10:00:00.000Z').toISOString();
 const yesterday = new Date('2026-06-01T10:00:00.000Z').toISOString();
 
-export const SEED_ISSUES: Issue[] = [
+const SEED_ISSUES_RAW: Omit<Issue, 'watcherIds'>[] = [
   // WEB
   {
     id: 'iss_web_1', key: 'WEB-1', projectId: 'prj_web', type: 'epic',
@@ -203,6 +204,11 @@ export const SEED_ISSUES: Issue[] = [
     createdAt: earlier, updatedAt: earlier,
   },
 ];
+
+export const SEED_ISSUES: Issue[] = SEED_ISSUES_RAW.map((i) => ({
+  ...i,
+  watcherIds: defaultWatchersForIssue(i.reporterId, i.assigneeId),
+}));
 
 export const SEED_COMMENTS: Comment[] = [
   {

@@ -192,6 +192,8 @@ export const issueSchema = z.object({
   customFields: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   /** Position within its column for stable ordering on the board */
   rank: z.number(),
+  /** Users who receive notifications for activity on this issue */
+  watcherIds: z.array(z.string()).default([]),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -224,7 +226,8 @@ export type ActivityKind =
   | 'parent'
   | 'comment'
   | 'link-added'
-  | 'link-removed';
+  | 'link-removed'
+  | 'watcher';
 
 export interface ActivityEntry {
   id: string;

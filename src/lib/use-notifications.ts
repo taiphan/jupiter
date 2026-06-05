@@ -6,6 +6,7 @@ import { useNotificationsStore } from './notifications-store';
 import { useAuthStore } from './auth-store';
 import { isWorkspaceOnline } from './workspace-mode';
 import type { ActivityEntry, Issue } from './types';
+import { shouldReceiveIssueNotification } from './derive/watchers';
 
 export interface Notification {
   id: string;
@@ -50,7 +51,7 @@ export function useNotifications(): {
         if (a.actorId === user.id) return false;
         const issue = issueById.get(a.issueId);
         if (!issue) return false;
-        return issue.assigneeId === user.id || issue.reporterId === user.id;
+        return shouldReceiveIssueNotification(issue, user.id);
       })
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, 30);

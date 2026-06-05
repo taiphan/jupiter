@@ -21,6 +21,7 @@ describe('issue mappers', () => {
       storyPoints: null,
       dueDate: '2026-06-05',
       customFields: null,
+      watcherIds: ['usr_admin'],
       rank: 1000,
       createdAt: new Date('2026-06-01T00:00:00.000Z'),
       updatedAt: new Date('2026-06-02T00:00:00.000Z'),
@@ -28,6 +29,7 @@ describe('issue mappers', () => {
 
     const issue = mapIssueRow(row);
     expect(issue.dueDate).toBe('2026-06-05');
+    expect(issue.watcherIds).toEqual(['usr_admin']);
 
     const insert = issueToInsert(issue);
     expect(insert.dueDate).toBe('2026-06-05');
