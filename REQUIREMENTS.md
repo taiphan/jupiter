@@ -31,9 +31,9 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Scrum board | Sprint board | ✅ | Per-sprint filtered board |
 | Backlog | Backlog tab | ✅ | Filter + reorder |
 | Summary / space home | Summary tab | ✅ | KPIs and recent activity |
-| **List view** (spreadsheet) | — | ⬜ | Atlassian Spring 2026: resizable columns, group by hierarchy |
+| **List view** (spreadsheet) | `/projects/{key}/list` | ✅ | v1.14: column picker, group by 6 axes, inline edit, bulk actions, CSV export |
 | **Calendar view** | — | ⬜ | Jira: due-date calendar |
-| **For You** home | My Work (`/`) | 🟡 | Assigned, reported, recent; not yet fully personalized |
+| **For You** home | My Work (`/`) | ✅ | v1.13: Due soon, What changed, Watching, Assigned, Reported |
 | Board configuration | Board config | ✅ | Column ↔ status mapping per project |
 | Quick filters on board | — | ⬜ | Jira: save filter chips on board |
 
@@ -80,8 +80,8 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Burndown | Sprint + project reports | 🟡 | Charts work; snapshot history in localStorage only — **v1.8:** `burndown_snapshots` + API |
 | Velocity | Rolling velocity chart | ✅ | |
 | Cumulative flow | Reports view | ✅ | |
-| **Custom dashboards per space** | — | ⬜ | Atlassian Spring 2026: widgets + Rovo insights |
-| Export (CSV / Excel) | — | ⬜ | |
+| **Custom dashboards per space** | `/projects/{key}/dashboard` | ✅ | v1.13: velocity, burndown, cumulative flow widgets |
+| Export (CSV / Excel) | Issues + Reports pages | ✅ | v1.13: CSV export for issues and velocity; v1.14: list page |
 | Rovo-generated status updates | — | ⬜ | |
 
 ---
@@ -91,7 +91,7 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Jira capability | Jupiter | Status | Notes |
 |-----------------|---------|--------|-------|
 | In-app notifications | Bell + notifications store | ✅ | Mentions, assignments |
-| Email notifications | — | ⬜ | |
+| Email notifications | `/api/notify/issue-event` | ✅ | v1.13: SMTP hooks for status, assignee, priority, comment changes (`ISSUE_EMAIL_NOTIFICATIONS=true`) |
 | **Guest / external access** | — | ⬜ | Atlassian Spring 2026: free guest seats |
 | Share link | — | ⬜ | |
 

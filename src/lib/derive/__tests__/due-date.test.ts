@@ -12,6 +12,7 @@ const base = (patch: Partial<Issue>): Issue => ({
   priority: 'medium',
   reporterId: 'u',
   labels: [],
+  watcherIds: [],
   rank: 0,
   createdAt: '',
   updatedAt: '',

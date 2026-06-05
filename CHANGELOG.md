@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.14.0] — 2026-06-05
+
+### List view — spreadsheet mode (v1.14)
+
+- **Column picker** — show/hide any column per-project (persisted to `localStorage`)
+- **Group by** — none / epic / status / sprint / assignee / priority with collapsible groups
+- **Inline cell editing** — change status, priority, assignee, and story points directly in the table without opening the dialog
+- **Bulk select** — checkboxes + select-all for bulk status, assignee, priority change and delete
+- **Export CSV** on the List page (respects active filters)
+- **Labels column** — opt-in column showing issue label badges
+- Fixed pre-existing test type errors (`watcherIds`, `for-you` duplicate key)
+
 ## [1.13.0] — 2026-06-04
 
 ### Dashboards & polish (v1.9)

@@ -4,16 +4,15 @@ import type { ActivityEntry, Issue } from '@/lib/types';
 
 function issue(partial: Partial<Issue> & Pick<Issue, 'id'>): Issue {
   return {
-    id: partial.id,
     key: partial.key ?? partial.id,
     projectId: 'prj',
     type: 'task',
     summary: 'Test',
-    status: partial.status ?? 'todo',
+    status: 'todo',
     priority: 'medium',
     reporterId: 'usr_rep',
     labels: [],
-    watcherIds: partial.watcherIds ?? [],
+    watcherIds: [],
     rank: 1000,
     createdAt: '2026-06-01T00:00:00.000Z',
     updatedAt: '2026-06-01T00:00:00.000Z',

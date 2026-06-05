@@ -16,6 +16,7 @@ function makeIssue(id: string, key: string, overrides: Partial<Issue> = {}): Iss
     priority: 'medium',
     reporterId: ACTOR,
     labels: [],
+    watcherIds: [],
     rank: 1000,
     createdAt: '2026-06-01T00:00:00.000Z',
     updatedAt: '2026-06-01T00:00:00.000Z',

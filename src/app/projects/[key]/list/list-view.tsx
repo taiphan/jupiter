@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { LayoutList } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useProjectsStore } from '@/lib/projects-store';
 import { useSprintsStore } from '@/lib/sprints-store';
 import { useIssuesStore, applyFilters, type IssueFilters } from '@/lib/issues-store';
 import { useAuthStore } from '@/lib/auth-store';
 import { IssueFiltersBar } from '@/components/issue/issue-filters';
-import { IssueListTable } from '@/components/issue/issue-list-table';
+import { IssueListTable, GROUP_BY_LABELS, type GroupBy } from '@/components/issue/issue-list-table';
 import { QuickFilterBar, matchQuickFilterId } from '@/components/issue/quick-filter-bar';
 import { IssueDialog } from '@/components/issue/issue-dialog';
 import { useQuickFiltersStore } from '@/lib/quick-filters-store';
@@ -15,10 +15,13 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { downloadCsv, issuesToCsv } from '@/lib/export/csv';
 import type { Issue } from '@/lib/types';
 
 export function ListView({ projectKey }: { projectKey: string }) {
   const project = useProjectsStore((s) => s.getProjectByKey(projectKey));
+  const allProjects = useProjectsStore((s) => s.projects);
+  const members = useProjectsStore((s) => s.members);
   const issues = useIssuesStore((s) => s.issues);
   const getSprintsByProject = useSprintsStore((s) => s.getSprintsByProject);
   const user = useAuthStore((s) => s.user);
@@ -27,7 +30,7 @@ export function ListView({ projectKey }: { projectKey: string }) {
   const [filters, setFilters] = useState<IssueFilters>({});
   const [activeQuickId, setActiveQuickId] = useState('__all');
   const [sprintFilter, setSprintFilter] = useState('all');
-  const [groupByEpic, setGroupByEpic] = useState(false);
+  const [groupBy, setGroupBy] = useState<GroupBy>('none');
   const [openIssueId, setOpenIssueId] = useState<string | null>(null);
 
   const sprints = project ? getSprintsByProject(project.id) : [];
@@ -57,6 +60,15 @@ export function ListView({ projectKey }: { projectKey: string }) {
     setFilters(qf);
   };
 
+  const handleExport = () => {
+    const csv = issuesToCsv(filtered, {
+      members,
+      projects: allProjects,
+      resolveSprintName: (id) => sprints.find((s) => s.id === id)?.name ?? '',
+    });
+    downloadCsv(`${project.key}-list-${new Date().toISOString().slice(0, 10)}`, csv);
+  };
+
   return (
     <div className="space-y-3 p-4 sm:p-6 lg:px-8">
       <QuickFilterBar
@@ -71,7 +83,7 @@ export function ListView({ projectKey }: { projectKey: string }) {
       <div className="flex flex-wrap items-center gap-2">
         <IssueFiltersBar filters={filters} onChange={handleFiltersChange} showStatus />
         <Select value={sprintFilter} onValueChange={(v) => v && setSprintFilter(v)}>
-          <SelectTrigger className="w-[200px]" aria-label="Sprint">
+          <SelectTrigger className="w-[180px]" aria-label="Sprint">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -82,26 +94,39 @@ export function ListView({ projectKey }: { projectKey: string }) {
             ))}
           </SelectContent>
         </Select>
+
+        <Select value={groupBy} onValueChange={(v) => v && setGroupBy(v as GroupBy)}>
+          <SelectTrigger className="w-[160px]" aria-label="Group by">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(Object.keys(GROUP_BY_LABELS) as GroupBy[]).map((g) => (
+              <SelectItem key={g} value={g}>{GROUP_BY_LABELS[g]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         <Button
-          variant={groupByEpic ? 'secondary' : 'outline'}
+          variant="outline"
           size="sm"
-          className="cursor-pointer gap-1.5 text-xs"
-          onClick={() => setGroupByEpic((v) => !v)}
+          className="cursor-pointer gap-1.5 text-xs ml-auto"
+          onClick={handleExport}
+          disabled={filtered.length === 0}
         >
-          <LayoutList className="h-3.5 w-3.5" />
-          {groupByEpic ? 'Grouped by epic' : 'Flat list'}
+          <Download className="h-3.5 w-3.5" aria-hidden="true" />
+          Export CSV
         </Button>
       </div>
 
       <IssueListTable
         issues={filtered}
         projectId={project.id}
-        groupByEpic={groupByEpic}
+        groupBy={groupBy}
         onOpenIssue={(issue: Issue) => setOpenIssueId(issue.id)}
       />
 
       <p className="text-center text-[11px] text-muted-foreground">
-        Showing {filtered.length} issues
+        {filtered.length} issue{filtered.length !== 1 ? 's' : ''}
         {activeSprint ? ` · Active sprint: ${activeSprint.name}` : ''}
       </p>
 
