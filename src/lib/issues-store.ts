@@ -54,6 +54,7 @@ interface IssuesState {
     parentId?: string;
     labels?: string[];
     storyPoints?: number;
+    startDate?: string;
     dueDate?: string;
   }) => Issue;
 
@@ -159,7 +160,7 @@ export const useIssuesStore = create<IssuesState>()(
       createIssue: ({
         projectId, type, summary, description,
         status = 'todo', priority = 'medium',
-        assigneeId, reporterId, parentId, labels = [], storyPoints, dueDate,
+        assigneeId, reporterId, parentId, labels = [], storyPoints, startDate, dueDate,
       }) => {
         // Mint the next key from the projects store
         const project = useProjectsStore.getState().getProject(projectId);
@@ -186,6 +187,7 @@ export const useIssuesStore = create<IssuesState>()(
           parentId,
           labels,
           storyPoints,
+          startDate,
           dueDate,
           rank: lastRank + RANK_STEP,
           watcherIds: defaultWatchersForIssue(reporterId, assigneeId),
@@ -247,6 +249,10 @@ export const useIssuesStore = create<IssuesState>()(
           }
           if (patch.customFields && JSON.stringify(patch.customFields) !== JSON.stringify(before.customFields)) {
             activity = pushActivity(activity, id, actorId, 'label', 'Updated fields');
+          }
+          if ('startDate' in patch && patch.startDate !== before.startDate) {
+            activity = pushActivity(activity, id, actorId, 'label',
+              patch.startDate ? `Start date set to ${patch.startDate}` : 'Start date cleared');
           }
           if ('dueDate' in patch && patch.dueDate !== before.dueDate) {
             activity = pushActivity(activity, id, actorId, 'label',

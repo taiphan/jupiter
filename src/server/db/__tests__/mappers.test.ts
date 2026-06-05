@@ -19,6 +19,7 @@ describe('issue mappers', () => {
       parentId: null,
       sprintId: null,
       storyPoints: null,
+      startDate: null,
       dueDate: '2026-06-05',
       customFields: null,
       watcherIds: ['usr_admin'],

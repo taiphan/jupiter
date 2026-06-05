@@ -16,7 +16,7 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Work item hierarchy (epic → story → subtask) | Issue types + `parentId` | ✅ | epic, story, task, bug, subtask |
 | Backlog ordering | Backlog view + rank | ✅ | Drag-and-drop reorder |
 | Sprints / iterations | Sprints store + sprint board | ✅ | Plan, start, complete; assign issues |
-| Roadmap / timeline | Timeline view | 🟡 | Basic timeline; no dependency lines yet |
+| Roadmap / timeline | Timeline view | ✅ | v1.17 — Gantt with epic/story/subtask rows, zoom, today line, dependency arrows, startDate field |
 | Capacity / story points | `storyPoints` on issues | ✅ | Used in reports |
 | Project templates | — | ⬜ | Atlassian: pre-built space templates |
 | AI work breakdown (Rovo) | — | ⬜ | Atlassian: break epics into tasks via AI |

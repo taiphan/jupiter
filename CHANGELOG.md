@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.17.0] — 2026-06-05
+
+### Timeline / Roadmap view (v1.17)
+
+- **Gantt chart** at `/projects/{key}/timeline` — replaces placeholder
+- **Hierarchical rows**: epics → child stories/tasks → subtasks; collapsible groups
+- **Issue bars**: positioned from `startDate` (or `createdAt` fallback) to `dueDate`; status colour-coded; hover tooltip
+- **Dependency arrows**: dashed red bezier lines with arrowheads for `blocks` links between issues in the same project
+- **Today line**: red vertical marker with "Today" label
+- **Zoom**: Week (40 px/day) · Month (14 px/day) · Quarter (6 px/day); zoom in/out buttons
+- **Pan**: native horizontal scroll
+- **startDate field** added to Issue (type, schema, mapper, store, dialog sidebar)
+- `db:push` to add `start_date TEXT` column to issues table
+
 ## [1.16.0] — 2026-06-05
 
 ### Subtask / parent hierarchy UI (v1.16)

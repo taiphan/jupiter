@@ -523,6 +523,22 @@ function IssueDialogBody({
             )}
           </FieldRow>
 
+          <FieldRow label="Start date">
+            {canEdit ? (
+              <Input
+                type="date"
+                value={issue.startDate ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  updateIssue(issue.id, { startDate: v || undefined }, user.id);
+                }}
+                className="h-8 text-xs"
+              />
+            ) : (
+              <span className="text-xs">{issue.startDate ?? '—'}</span>
+            )}
+          </FieldRow>
+
           <FieldRow label="Due date">
             {canEdit ? (
               <Input

@@ -216,6 +216,8 @@ export const issues = pgTable(
     parentId: text('parent_id'),
     sprintId: text('sprint_id').references(() => sprints.id, { onDelete: 'set null' }),
     storyPoints: integer('story_points'),
+    /** Calendar day (YYYY-MM-DD) for timeline start */
+    startDate: text('start_date'),
     /** Calendar day (YYYY-MM-DD) for list/calendar views */
     dueDate: text('due_date'),
     customFields: jsonb('custom_fields').$type<Record<string, string | number | boolean>>(),

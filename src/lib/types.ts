@@ -186,6 +186,8 @@ export const issueSchema = z.object({
   /** Sprint this issue is committed to */
   sprintId: z.string().optional(),
   storyPoints: z.number().int().nonnegative().optional(),
+  /** Start date (calendar day, YYYY-MM-DD) for timeline bars */
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   /** Due date (calendar day, YYYY-MM-DD) */
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   /** Values for project-defined custom fields, keyed by field id */
