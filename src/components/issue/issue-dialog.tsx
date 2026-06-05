@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Trash2, X, Paperclip, Upload, FileText, Download } from 'lucide-react';
 import {
   Dialog,
@@ -39,6 +39,7 @@ import { PriorityIcon } from './priority-icon';
 import { UserAvatar } from './user-avatar';
 import { IssueWatchers } from './issue-watchers';
 import { IssueLinksPanel } from './issue-links-panel';
+import { IssueSubtasksPanel } from './issue-subtasks-panel';
 
 interface IssueDialogProps {
   issueId: string | null;
@@ -46,16 +47,39 @@ interface IssueDialogProps {
 }
 
 export function IssueDialog({ issueId, onClose }: IssueDialogProps) {
+  const [navStack, setNavStack] = useState<string[]>([]);
+  const currentId = navStack.length > 0 ? navStack[navStack.length - 1] : issueId;
+
+  // Reset stack when the anchor issueId changes.
+  useEffect(() => { setNavStack([]); }, [issueId]);
+
+  const pushIssue = (id: string) => setNavStack((s) => [...s, id]);
+  const popIssue = () => setNavStack((s) => s.slice(0, -1));
+
   return (
     <Dialog open={!!issueId} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-        {issueId && <IssueDialogBody issueId={issueId} onClose={onClose} />}
+        {currentId && (
+          <IssueDialogBody
+            issueId={currentId}
+            onClose={onClose}
+            onNavigate={pushIssue}
+            onBack={navStack.length > 0 ? popIssue : undefined}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
-function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () => void }) {
+function IssueDialogBody({
+  issueId, onClose, onNavigate, onBack,
+}: {
+  issueId: string;
+  onClose: () => void;
+  onNavigate: (id: string) => void;
+  onBack?: () => void;
+}) {
   const issue = useIssuesStore((s) => s.issues.find((i) => i.id === issueId));
   const updateIssue = useIssuesStore((s) => s.updateIssue);
   const deleteIssue = useIssuesStore((s) => s.deleteIssue);
@@ -89,9 +113,12 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
   const canTransition = hasPermission(user.role, 'issues.transition');
   const canComment = hasPermission(user.role, 'comments.create');
 
+  const allIssues = useIssuesStore((s) => s.issues);
   const reporter = members.find((m) => m.id === issue.reporterId);
   const assignee = issue.assigneeId ? members.find((m) => m.id === issue.assigneeId) : undefined;
+  const parentIssue = issue.parentId ? allIssues.find((i) => i.id === issue.parentId) : undefined;
   const projectMembers = project ? members.filter((m) => project.memberIds.includes(m.id)) : members;
+  const handleNavigate = useCallback(onNavigate, [onNavigate]);
   const comments = getCommentsForIssue(issue.id);
   const activity = getActivityForIssue(issue.id);
 
@@ -145,6 +172,29 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
       {/* Header */}
       <DialogHeader className="border-b px-6 py-3 flex flex-row items-center gap-3 space-y-0">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer"
+              aria-label="Back"
+            >
+              ← Back
+            </button>
+          )}
+          {parentIssue && !onBack && (
+            <button
+              type="button"
+              onClick={() => handleNavigate(parentIssue.id)}
+              className="flex items-center gap-1 text-xs hover:underline cursor-pointer"
+              aria-label={`Open parent ${parentIssue.key}`}
+            >
+              <IssueTypeIcon type={parentIssue.type} />
+              <span className="font-mono text-primary">{parentIssue.key}</span>
+              <span className="hidden sm:inline truncate max-w-[120px]">{parentIssue.summary}</span>
+              <span className="text-muted-foreground">›</span>
+            </button>
+          )}
           <IssueTypeIcon type={issue.type} />
           <span className="font-mono">{issue.key}</span>
         </div>
@@ -239,6 +289,17 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
 
           {/* Issue links */}
           <IssueLinksPanel issueId={issue.id} canEdit={canEdit} />
+
+          {/* Subtasks (not shown for subtask-type issues to avoid nesting) */}
+          {issue.type !== 'subtask' && (
+            <IssueSubtasksPanel
+              parentId={issue.id}
+              projectId={issue.projectId}
+              canCreate={canEdit}
+              canTransition={canTransition}
+              onOpenSubtask={handleNavigate}
+            />
+          )}
 
           {/* Comments */}
           <div className="space-y-3">
@@ -523,6 +584,17 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
 
           <CustomFieldsEditor issue={issue} canEdit={canEdit} actorId={user.id} />
 
+          {/* Parent field */}
+          <FieldRow label="Parent">
+            <ParentSelect
+              issue={issue}
+              allIssues={allIssues}
+              canEdit={canEdit}
+              userId={user.id}
+              onNavigateToParent={handleNavigate}
+            />
+          </FieldRow>
+
           <Separator />
 
           <div className="space-y-1 text-[11px] text-muted-foreground">
@@ -532,6 +604,134 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
         </div>
       </div>
     </>
+  );
+}
+
+// ─── Parent picker ──────────────────────────────────────────────────────────
+
+function ParentSelect({
+  issue, allIssues, canEdit, userId, onNavigateToParent,
+}: {
+  issue: Issue;
+  allIssues: Issue[];
+  canEdit: boolean;
+  userId: string;
+  onNavigateToParent: (id: string) => void;
+}) {
+  const updateIssue = useIssuesStore((s) => s.updateIssue);
+  const [searching, setSearching] = useState(false);
+  const [query, setQuery] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { if (searching) inputRef.current?.focus(); }, [searching]);
+
+  const parent = issue.parentId ? allIssues.find((i) => i.id === issue.parentId) : null;
+
+  // Eligible parents: same project, not self, not subtask type, not a descendant
+  const eligible = allIssues.filter((i) => {
+    if (i.id === issue.id) return false;
+    if (i.projectId !== issue.projectId) return false;
+    if (i.type === 'subtask') return false;
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return i.key.toLowerCase().includes(q) || i.summary.toLowerCase().includes(q);
+  }).slice(0, 8);
+
+  if (!canEdit) {
+    return parent ? (
+      <button
+        type="button"
+        onClick={() => onNavigateToParent(parent.id)}
+        className="flex items-center gap-1.5 text-xs hover:underline cursor-pointer text-left"
+      >
+        <IssueTypeIcon type={parent.type} />
+        <span className="font-mono text-primary">{parent.key}</span>
+        <span className="truncate">{parent.summary}</span>
+      </button>
+    ) : <span className="text-xs text-muted-foreground">None</span>;
+  }
+
+  if (searching) {
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center gap-1">
+          <Input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search parent…"
+            className="h-7 text-xs"
+            onKeyDown={(e) => { if (e.key === 'Escape') { setSearching(false); setQuery(''); } }}
+          />
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            className="cursor-pointer h-7 w-7 shrink-0"
+            onClick={() => { setSearching(false); setQuery(''); }}
+            aria-label="Cancel"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+        {eligible.length > 0 && (
+          <ul className="rounded-md border bg-background shadow-sm divide-y text-xs">
+            {eligible.map((i) => (
+              <li key={i.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateIssue(issue.id, { parentId: i.id }, userId);
+                    setSearching(false);
+                    setQuery('');
+                  }}
+                  className="flex w-full items-center gap-2 px-2 py-1.5 hover:bg-muted cursor-pointer text-left"
+                >
+                  <IssueTypeIcon type={i.type} />
+                  <span className="font-mono text-primary shrink-0">{i.key}</span>
+                  <span className="flex-1 truncate">{i.summary}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {parent ? (
+        <button
+          type="button"
+          onClick={() => onNavigateToParent(parent.id)}
+          className="flex flex-1 items-center gap-1.5 text-xs hover:underline cursor-pointer text-left min-w-0"
+        >
+          <IssueTypeIcon type={parent.type} />
+          <span className="font-mono text-primary shrink-0">{parent.key}</span>
+          <span className="truncate">{parent.summary}</span>
+        </button>
+      ) : (
+        <span className="flex-1 text-xs text-muted-foreground">None</span>
+      )}
+      <button
+        type="button"
+        onClick={() => setSearching(true)}
+        className="shrink-0 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+        aria-label="Change parent"
+      >
+        {parent ? 'Change' : 'Set'}
+      </button>
+      {parent && (
+        <button
+          type="button"
+          onClick={() => updateIssue(issue.id, { parentId: undefined }, userId)}
+          className="shrink-0 text-[10px] text-muted-foreground hover:text-destructive cursor-pointer"
+          aria-label="Remove parent"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
+    </div>
   );
 }
 

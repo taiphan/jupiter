@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.16.0] — 2026-06-05
+
+### Subtask / parent hierarchy UI (v1.16)
+
+- **Subtask panel** in issue dialog — progress bar, collapsible list, inline status toggle; Add subtask with ↵ rapid entry
+- **Parent breadcrumb** in issue dialog header — click to navigate to parent; Back button when navigating within dialog
+- **In-dialog navigation** — clicking a subtask opens it in the same dialog; Back returns to parent
+- **Parent field** in sidebar — search to set/change/remove parent; click to navigate to parent
+- **Parent picker** in Create issue dialog — search by key or summary; pre-fills type to `subtask` when `defaultParentId` is set
+- **Backlog indentation** — subtask rows are indented 20 px under their parent in sprint/backlog sections
+- Persistence via existing workspace sync (no schema change needed — `parentId` was already in the issue model)
+
 ## [1.15.0] — 2026-06-05
 
 ### Issue links UI (v1.15)

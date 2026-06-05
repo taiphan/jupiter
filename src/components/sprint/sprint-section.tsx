@@ -241,23 +241,27 @@ export function SprintSection({
             </div>
           ) : (
             <SortableContext items={issues.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-              {issues.map((i) => (
-                <SortableIssueRow
-                  key={i.id}
-                  issue={i}
-                  onOpen={onOpenIssue}
-                  canEdit={canEditIssues}
-                  isBacklog={isBacklog}
-                  otherSprints={otherSprints}
-                  allActiveSprints={projectSprints.filter((s) => s.state !== 'completed')}
-                  onMoveToBacklog={() => removeIssueFromSprint(i.id)}
-                  onMoveToSprint={(sprintId) => addIssueToSprint(i.id, sprintId)}
-                  onToggleDone={() =>
-                    user &&
-                    updateIssue(i.id, { status: i.status === 'done' ? 'todo' : 'done' }, user.id)
-                  }
-                />
-              ))}
+              {issues.map((i) => {
+                const isSubtask = !!i.parentId && issues.some((p) => p.id === i.parentId);
+                return (
+                  <SortableIssueRow
+                    key={i.id}
+                    issue={i}
+                    onOpen={onOpenIssue}
+                    canEdit={canEditIssues}
+                    isBacklog={isBacklog}
+                    otherSprints={otherSprints}
+                    allActiveSprints={projectSprints.filter((s) => s.state !== 'completed')}
+                    onMoveToBacklog={() => removeIssueFromSprint(i.id)}
+                    onMoveToSprint={(sprintId) => addIssueToSprint(i.id, sprintId)}
+                    onToggleDone={() =>
+                      user &&
+                      updateIssue(i.id, { status: i.status === 'done' ? 'todo' : 'done' }, user.id)
+                    }
+                    depth={isSubtask ? 1 : 0}
+                  />
+                );
+              })}
             </SortableContext>
           )}
 
@@ -327,11 +331,12 @@ interface SortableIssueRowProps {
   onMoveToBacklog: () => void;
   onMoveToSprint: (sprintId: string) => void;
   onToggleDone: () => void;
+  depth?: number;
 }
 
 function SortableIssueRow({
   issue, onOpen, canEdit, isBacklog, otherSprints, allActiveSprints,
-  onMoveToBacklog, onMoveToSprint, onToggleDone,
+  onMoveToBacklog, onMoveToSprint, onToggleDone, depth = 0,
 }: SortableIssueRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: issue.id,
@@ -346,7 +351,7 @@ function SortableIssueRow({
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{ ...style, paddingLeft: depth > 0 ? `${depth * 20}px` : undefined }}
       className={cn('group flex items-center gap-1', isDragging && 'opacity-40')}
     >
       <button

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -37,15 +37,18 @@ interface CreateIssueDialogProps {
   defaultProjectId?: string;
   defaultStatus?: IssueStatus;
   defaultDueDate?: string;
+  /** Pre-fill parentId (e.g. when creating from issue dialog "Add subtask") */
+  defaultParentId?: string;
   /** Called with the new issue id after creation. */
   onCreated?: (id: string) => void;
 }
 
 export function CreateIssueDialog({
-  open, onClose, defaultProjectId, defaultStatus = 'todo', defaultDueDate, onCreated,
+  open, onClose, defaultProjectId, defaultStatus = 'todo', defaultDueDate, defaultParentId, onCreated,
 }: CreateIssueDialogProps) {
   const projects = useProjectsStore((s) => s.projects);
   const members = useProjectsStore((s) => s.members);
+  const allIssues = useIssuesStore((s) => s.issues);
   const createIssue = useIssuesStore((s) => s.createIssue);
   const user = useAuthStore((s) => s.user);
 
@@ -58,25 +61,43 @@ export function CreateIssueDialog({
   const [assigneeId, setAssigneeId] = useState<string>('__unassigned');
   const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState('');
+  const [parentId, setParentId] = useState<string | undefined>(defaultParentId);
+  const [parentQuery, setParentQuery] = useState('');
+  const parentInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting form state when the dialog re-opens
     setProjectId(defaultProjectId ?? projects[0]?.id ?? '');
     setStatus(defaultStatus);
-    setType('task');
+    setType(defaultParentId ? 'subtask' : 'task');
     setPriority('medium');
     setSummary('');
     setDescription('');
     setAssigneeId('__unassigned');
     setDueDate(defaultDueDate ?? '');
     setError('');
-  }, [open, defaultProjectId, defaultStatus, defaultDueDate, projects]);
+    setParentId(defaultParentId);
+    setParentQuery('');
+  }, [open, defaultProjectId, defaultStatus, defaultDueDate, defaultParentId, projects]);
 
   if (!user) return null;
 
   const project = projects.find((p) => p.id === projectId);
   const projectMembers = project ? members.filter((m) => project.memberIds.includes(m.id)) : members;
+
+  // Parent suggestions: same project, not subtask, not self
+  const parentSuggestions = useMemo(() => {
+    const q = parentQuery.trim().toLowerCase();
+    if (!q) return [];
+    return allIssues
+      .filter((i) => i.projectId === projectId && i.type !== 'subtask' && (
+        i.key.toLowerCase().includes(q) || i.summary.toLowerCase().includes(q)
+      ))
+      .slice(0, 6);
+  }, [parentQuery, allIssues, projectId]);
+
+  const selectedParent = parentId ? allIssues.find((i) => i.id === parentId) : undefined;
 
   const submit = () => {
     if (!summary.trim()) {
@@ -97,6 +118,7 @@ export function CreateIssueDialog({
       assigneeId: assigneeId === '__unassigned' ? undefined : assigneeId,
       reporterId: user.id,
       dueDate: dueDate || undefined,
+      parentId: parentId,
     });
     onCreated?.(issue.id);
     onClose();
@@ -202,6 +224,51 @@ export function CreateIssueDialog({
               placeholder="Optional — what does &quot;done&quot; look like?"
               rows={4}
             />
+          </Field>
+
+          <Field label="Parent (optional)">
+            {selectedParent ? (
+              <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-2 py-1.5">
+                <IssueTypeIcon type={selectedParent.type} />
+                <span className="font-mono text-xs text-primary">{selectedParent.key}</span>
+                <span className="flex-1 truncate text-xs">{selectedParent.summary}</span>
+                <button
+                  type="button"
+                  onClick={() => { setParentId(undefined); setParentQuery(''); }}
+                  className="text-muted-foreground hover:text-destructive cursor-pointer"
+                  aria-label="Remove parent"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <Input
+                  ref={parentInputRef}
+                  value={parentQuery}
+                  onChange={(e) => setParentQuery(e.target.value)}
+                  placeholder="Search by key or summary…"
+                  className="h-8 text-xs"
+                />
+                {parentSuggestions.length > 0 && (
+                  <ul className="absolute z-50 mt-1 w-full rounded-md border bg-background shadow-md divide-y text-xs">
+                    {parentSuggestions.map((i) => (
+                      <li key={i.id}>
+                        <button
+                          type="button"
+                          onClick={() => { setParentId(i.id); setParentQuery(''); }}
+                          className="flex w-full items-center gap-2 px-2 py-1.5 hover:bg-muted cursor-pointer text-left"
+                        >
+                          <IssueTypeIcon type={i.type} />
+                          <span className="font-mono text-primary shrink-0">{i.key}</span>
+                          <span className="truncate">{i.summary}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </Field>
 
           <Field label="Due date">

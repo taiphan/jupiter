@@ -57,7 +57,7 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | In-app notifications (read state) | Bell + activity-derived feed | 🟡 | Feed from `activity`; watchers in v1.12; read state via API (v1.8) |
 | Votes | — | — | |
 | Due dates / fix versions | — | ⬜ | |
-| Subtasks on board | Parent/child in model | 🟡 | UI for subtask tree limited |
+| Subtasks on board | Parent/child in model | ✅ | v1.16 — subtask panel, parent breadcrumb, inline add, parent picker in create dialog, backlog indentation |
 
 ---
 
