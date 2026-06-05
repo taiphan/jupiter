@@ -81,12 +81,6 @@ export function CreateIssueDialog({
     setParentQuery('');
   }, [open, defaultProjectId, defaultStatus, defaultDueDate, defaultParentId, projects]);
 
-  if (!user) return null;
-
-  const project = projects.find((p) => p.id === projectId);
-  const projectMembers = project ? members.filter((m) => project.memberIds.includes(m.id)) : members;
-
-  // Parent suggestions: same project, not subtask, not self
   const parentSuggestions = useMemo(() => {
     const q = parentQuery.trim().toLowerCase();
     if (!q) return [];
@@ -96,6 +90,11 @@ export function CreateIssueDialog({
       ))
       .slice(0, 6);
   }, [parentQuery, allIssues, projectId]);
+
+  if (!user) return null;
+
+  const project = projects.find((p) => p.id === projectId);
+  const projectMembers = project ? members.filter((m) => project.memberIds.includes(m.id)) : members;
 
   const selectedParent = parentId ? allIssues.find((i) => i.id === parentId) : undefined;
 

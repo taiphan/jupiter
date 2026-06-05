@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger,
 } from '@/components/ui/select';
 import { useIssuesStore } from '@/lib/issues-store';
+import { useProjectsStore } from '@/lib/projects-store';
 import { useAuthStore } from '@/lib/auth-store';
+import { canTransition as isWorkflowTransitionAllowed, getAllowedTargets } from '@/lib/workflow-transitions';
 import { IssueTypeIcon } from './issue-icon';
 import {
   STATUSES, STATUS_LABELS, STATUS_COLORS,
@@ -33,6 +35,7 @@ export function IssueSubtasksPanel({
   const issues = useIssuesStore((s) => s.issues);
   const createIssue = useIssuesStore((s) => s.createIssue);
   const updateIssue = useIssuesStore((s) => s.updateIssue);
+  const project = useProjectsStore((s) => s.getProject(projectId));
   const user = useAuthStore((s) => s.user);
 
   const [adding, setAdding] = useState(false);
@@ -159,7 +162,12 @@ export function IssueSubtasksPanel({
               {canTransition ? (
                 <Select
                   value={sub.status}
-                  onValueChange={(v) => v && user && updateIssue(sub.id, { status: v as IssueStatus }, user.id)}
+                  onValueChange={(v) => {
+                    if (!v || !user) return;
+                    const next = v as IssueStatus;
+                    if (!isWorkflowTransitionAllowed(user.role, sub.status, next, project)) return;
+                    updateIssue(sub.id, { status: next }, user.id);
+                  }}
                 >
                   <SelectTrigger
                     className="h-5 w-auto min-w-[90px] border-0 p-0 shadow-none ring-0 text-[10px] hover:bg-muted focus:ring-1"
@@ -170,7 +178,9 @@ export function IssueSubtasksPanel({
                     </Badge>
                   </SelectTrigger>
                   <SelectContent>
-                    {STATUSES.map((s) => (
+                    {STATUSES.filter(
+                      (s) => s === sub.status || getAllowedTargets(user!.role, sub.status, project).includes(s),
+                    ).map((s) => (
                       <SelectItem key={s} value={s} className="text-xs">{STATUS_LABELS[s]}</SelectItem>
                     ))}
                   </SelectContent>

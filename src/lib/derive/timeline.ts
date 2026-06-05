@@ -112,3 +112,57 @@ export function computeEpicSpan(
   if (earliestStart === null || latestEnd === null) return null;
   return { start: earliestStart, end: latestEnd };
 }
+
+/** Minimal issue shape for building timeline row hierarchy. */
+export interface TimelineRowIssue {
+  id: string;
+  key: string;
+  type: string;
+  parentId?: string;
+}
+
+export interface TimelineRow<T extends TimelineRowIssue = TimelineRowIssue> {
+  issue: T;
+  depth: number;
+}
+
+/**
+ * Build a hierarchical row list for the Gantt view: roots first (epics before others),
+ * then children recursively. Respects `collapsed` parent ids.
+ */
+export function buildTimelineRows<T extends TimelineRowIssue>(
+  issues: readonly T[],
+  collapsed: ReadonlySet<string> = new Set(),
+): TimelineRow<T>[] {
+  const byId = new Map(issues.map((i) => [i.id, i]));
+  const byParent = new Map<string, T[]>();
+  for (const issue of issues) {
+    if (!issue.parentId || !byId.has(issue.parentId)) continue;
+    const list = byParent.get(issue.parentId) ?? [];
+    list.push(issue);
+    byParent.set(issue.parentId, list);
+  }
+
+  const result: TimelineRow<T>[] = [];
+  const visited = new Set<string>();
+
+  const walk = (issue: T, depth: number) => {
+    if (visited.has(issue.id)) return;
+    visited.add(issue.id);
+    result.push({ issue, depth });
+    if (collapsed.has(issue.id)) return;
+    const children = byParent.get(issue.id) ?? [];
+    children.sort((a, b) => a.key.localeCompare(b.key));
+    for (const child of children) walk(child, depth + 1);
+  };
+
+  const roots = issues.filter((i) => !i.parentId || !byId.has(i.parentId));
+  roots.sort((a, b) => {
+    if (a.type === 'epic' && b.type !== 'epic') return -1;
+    if (b.type === 'epic' && a.type !== 'epic') return 1;
+    return a.key.localeCompare(b.key);
+  });
+
+  for (const root of roots) walk(root, 0);
+  return result;
+}

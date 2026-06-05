@@ -18,10 +18,12 @@ import { useSprintsStore } from '@/lib/sprints-store';
 import { useIssuesStore } from '@/lib/issues-store';
 import { hasPermission } from '@/lib/permissions';
 import { useAuthStore } from '@/lib/auth-store';
-import type { Issue, IssueStatus, Member, Priority, Sprint } from '@/lib/types';
+import type { Issue, IssueStatus, Member, Priority, Project, Sprint } from '@/lib/types';
 import {
   ISSUE_TYPE_LABELS, PRIORITIES, PRIORITY_LABELS, STATUSES, STATUS_LABELS,
 } from '@/lib/types';
+import { canTransition as isWorkflowTransitionAllowed, getAllowedTargets } from '@/lib/workflow-transitions';
+import type { UserRole } from '@/lib/auth-store';
 import { IssueTypeIcon } from './issue-icon';
 import { PriorityIcon } from './priority-icon';
 import { UserAvatar } from './user-avatar';
@@ -73,10 +75,14 @@ export function IssueListTable({ issues, projectId, groupBy = 'none', onOpenIssu
   const deleteIssue = useIssuesStore((s) => s.deleteIssue);
   const user = useAuthStore((s) => s.user);
   const sprints = getSprintsByProject(projectId);
+  const project = useMemo(
+    () => projects.find((p) => p.id === projectId),
+    [projects, projectId],
+  );
   const projectMembers = useMemo(() => {
-    const proj = projects.find((p) => p.id === projectId);
-    return proj ? members.filter((m) => proj.memberIds.includes(m.id)) : members;
-  }, [members, projects, projectId]);
+    return project ? members.filter((m) => project.memberIds.includes(m.id)) : members;
+  }, [members, project]);
+  const userRole = user?.role;
 
   const [sortKey, setSortKey] = useState<ListSortKey>('key');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
@@ -403,6 +409,8 @@ export function IssueListTable({ issues, projectId, groupBy = 'none', onOpenIssu
                       canEdit={canEdit}
                       canTransition={canTransition}
                       userId={user?.id ?? ''}
+                      userRole={userRole}
+                      project={project}
                     />
                   ))}
                 </>
@@ -428,9 +436,14 @@ interface RowProps {
   canEdit: boolean;
   canTransition: boolean;
   userId: string;
+  userRole?: UserRole;
+  project?: Project;
 }
 
-function IssueRow({ issue, columns, selected, onToggleSelect, onOpenIssue, members, sprints, canEdit, canTransition, userId }: RowProps) {
+function IssueRow({
+  issue, columns, selected, onToggleSelect, onOpenIssue, members, sprints,
+  canEdit, canTransition, userId, userRole, project,
+}: RowProps) {
   const updateIssue = useIssuesStore((s) => s.updateIssue);
   const [editingPoints, setEditingPoints] = useState(false);
   const [pointsVal, setPointsVal] = useState(String(issue.storyPoints ?? ''));
@@ -463,8 +476,20 @@ function IssueRow({ issue, columns, selected, onToggleSelect, onOpenIssue, membe
 
       case 'status':
         if (!canTransition) return <Badge variant="outline" className="text-[10px]">{STATUS_LABELS[issue.status]}</Badge>;
-        return (
-          <Select value={issue.status} onValueChange={(v) => v && updateIssue(issue.id, { status: v as IssueStatus }, userId)}>
+        {
+          const statusOptions = STATUSES.filter(
+            (s) => s === issue.status || (userRole && getAllowedTargets(userRole, issue.status, project).includes(s)),
+          );
+          return (
+          <Select
+            value={issue.status}
+            onValueChange={(v) => {
+              if (!v || !userRole) return;
+              const next = v as IssueStatus;
+              if (!isWorkflowTransitionAllowed(userRole, issue.status, next, project)) return;
+              updateIssue(issue.id, { status: next }, userId);
+            }}
+          >
             <SelectTrigger
               className="h-6 min-w-[100px] border-0 p-0 text-[10px] shadow-none ring-0 hover:bg-muted focus:ring-1"
               onClick={(e) => e.stopPropagation()}
@@ -472,12 +497,13 @@ function IssueRow({ issue, columns, selected, onToggleSelect, onOpenIssue, membe
               <Badge variant="outline" className="text-[10px]">{STATUS_LABELS[issue.status]}</Badge>
             </SelectTrigger>
             <SelectContent>
-              {STATUSES.map((s) => (
+              {statusOptions.map((s) => (
                 <SelectItem key={s} value={s} className="text-xs">{STATUS_LABELS[s]}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-        );
+          );
+        }
 
       case 'priority':
         if (!canEdit) return <span className="flex items-center gap-1 text-xs"><PriorityIcon priority={issue.priority} />{PRIORITY_LABELS[issue.priority]}</span>;

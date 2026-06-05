@@ -8,6 +8,7 @@ import { useProjectsStore } from '@/lib/projects-store';
 import { useIssueLinksStore } from '@/lib/issue-links-store';
 import { IssueDialog } from '@/components/issue/issue-dialog';
 import { IssueTypeIcon } from '@/components/issue/issue-icon';
+import { buildTimelineRows } from '@/lib/derive/timeline';
 import type { Issue } from '@/lib/types';
 import { STATUS_DEFAULTS } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -28,9 +29,6 @@ const ZOOM_SEQUENCE: Zoom[] = ['week', 'month', 'quarter'];
 
 // ─── Date helpers ────────────────────────────────────────────────────────────
 
-function dayKey(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
 function addDays(d: Date, n: number) {
   const r = new Date(d);
   r.setUTCDate(r.getUTCDate() + n);
@@ -41,6 +39,10 @@ function diffDays(a: Date, b: Date) {
 }
 function parseDay(s: string | undefined): Date | null {
   if (!s) return null;
+  const day = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (day) {
+    return new Date(Date.UTC(Number(day[1]), Number(day[2]) - 1, Number(day[3])));
+  }
   const ms = Date.parse(s);
   return Number.isNaN(ms) ? null : new Date(ms);
 }
@@ -143,34 +145,11 @@ export function TimelineView({ projectKey }: TimelineViewProps) {
     [allIssues, project],
   );
 
-  // Build hierarchical rows: epics → children (stories/tasks/bugs) → subtasks
-  const rows = useMemo(() => {
-    const epics = projectIssues.filter((i) => i.type === 'epic');
-    const nonEpics = projectIssues.filter(
-      (i) => i.type !== 'epic' && !i.parentId,
-    );
-    const result: Array<{ issue: Issue; depth: number }> = [];
-
-    for (const epic of epics) {
-      result.push({ issue: epic, depth: 0 });
-      if (!collapsed.has(epic.id)) {
-        const children = projectIssues.filter((i) => i.parentId === epic.id);
-        for (const child of children) {
-          result.push({ issue: child, depth: 1 });
-          if (!collapsed.has(child.id)) {
-            const subtasks = projectIssues.filter((i) => i.parentId === child.id);
-            for (const sub of subtasks) {
-              result.push({ issue: sub, depth: 2 });
-            }
-          }
-        }
-      }
-    }
-    for (const issue of nonEpics) {
-      result.push({ issue, depth: 0 });
-    }
-    return result;
-  }, [projectIssues, collapsed]);
+  // Hierarchical rows: roots → children (includes subtasks under non-epic stories)
+  const rows = useMemo(
+    () => buildTimelineRows(projectIssues, collapsed),
+    [projectIssues, collapsed],
+  );
 
   // Compute view range: earliest date → latest date + padding
   const { viewStart, totalDays } = useMemo(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { RotateCcw, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,7 +11,6 @@ import { ROLE_LABELS } from '@/lib/permissions';
 import { STATUS_LABELS, STATUSES } from '@/lib/types';
 import type { IssueStatus, Project, TransitionRules } from '@/lib/types';
 import {
-  DEFAULT_TRANSITION_RULES,
   buildDefaultTransitionRules,
   resolveTransitionRules,
 } from '@/lib/workflow-transitions';
@@ -20,9 +19,10 @@ import { cn } from '@/lib/utils';
 const ROLES: UserRole[] = ['admin', 'lead', 'member', 'viewer'];
 
 function cloneRules(rules: TransitionRules): TransitionRules {
+  const defaults = buildDefaultTransitionRules();
   const out = {} as TransitionRules;
   for (const role of ROLES) {
-    const roleRules = rules[role] ?? DEFAULT_TRANSITION_RULES[role]!;
+    const roleRules = rules[role] ?? defaults[role]!;
     out[role] = Object.fromEntries(
       STATUSES.map((from) => [from, [...(roleRules[from] ?? [])]]),
     ) as TransitionRules[UserRole];
@@ -40,27 +40,21 @@ function rulesEqual(a: TransitionRules, b: TransitionRules): boolean {
   );
 }
 
-function effectiveRules(project: Project): TransitionRules {
-  return cloneRules(resolveTransitionRules(project));
-}
-
 interface TransitionRulesEditorProps {
   project: Project;
   canEdit: boolean;
   onSave: (rules: TransitionRules | undefined) => void;
 }
 
-export function TransitionRulesEditor({ project, canEdit, onSave }: TransitionRulesEditorProps) {
-  const saved = useMemo(
-    () => effectiveRules(project),
-    [project.id, project.transitionRules],
-  );
-  const [draft, setDraft] = useState<TransitionRules>(() => cloneRules(saved));
-  const [role, setRole] = useState<UserRole>('member');
+export function TransitionRulesEditor(props: TransitionRulesEditorProps) {
+  const resetKey = `${props.project.id}:${JSON.stringify(props.project.transitionRules ?? null)}`;
+  return <TransitionRulesEditorInner key={resetKey} {...props} />;
+}
 
-  useEffect(() => {
-    setDraft(cloneRules(saved));
-  }, [project.id, project.transitionRules, saved]);
+function TransitionRulesEditorInner({ project, canEdit, onSave }: TransitionRulesEditorProps) {
+  const saved = useMemo(() => cloneRules(resolveTransitionRules(project)), [project]);
+  const [draft, setDraft] = useState(() => cloneRules(saved));
+  const [role, setRole] = useState<UserRole>('member');
 
   const isDirty = !rulesEqual(draft, saved);
   const isDefault = rulesEqual(draft, buildDefaultTransitionRules());

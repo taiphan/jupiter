@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.18.1] — 2026-06-05
+
+### Bug fixes
+
+- **Create issue dialog:** `useMemo` after early return (Rules of Hooks)
+- **Timeline:** subtasks under non-epic stories missing; `buildTimelineRows` hierarchy helper
+- **List view / subtasks:** inline status changes respect workflow transition rules
+- **Transition rules editor:** remount on save instead of sync effect (stale draft)
+
 ## [1.18.0] — 2026-06-05
 
 ### Workflow transition rules editor (v1.18)
