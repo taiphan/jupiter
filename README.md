@@ -45,8 +45,10 @@ Full feature mapping vs [Atlassian Jira](https://www.atlassian.com/software/jira
 - **Board config** — map statuses to columns + transition rules
 - **Audit log** — workspace change history (admin/viewer)
 
-### Reports
+### Reports & export
 - **Burndown**, **velocity**, **cumulative flow**
+- **Project dashboard** — customizable widgets per project
+- **CSV export** — issues and velocity reports
 
 ### Platform
 - **Role-based access** — admin / lead / member / viewer
