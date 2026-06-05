@@ -195,6 +195,7 @@ The **login** (`/login`) and **sign-up** (`/signup`) pages must expose every aut
 | Project settings | Settings tab | ✅ | Name, key, lead, members |
 | Workflow editor (visual) | Board config → transition rules | ✅ | v1.18 — per-role from→to matrix; enforced on board, list, dialog |
 | Fix versions / releases | `/projects/{key}/releases` | ✅ | v1.19 — version CRUD, issue assignment, list column |
+| Automation rules | `/projects/{key}/automation` | ✅ | v1.20 — when/then on create & status change |
 | Audit log | `/audit` | 🟡 | Issue `activity` in Postgres via workspace sync; read via client store — **v1.8:** paginated API + optional workspace events |
 | **Authentication settings (admin)** | Settings → Authentication & email | ✅ | v1.10: SMTP, Google OAuth, 2FA flag, test email |
 | **Delegated permissions / templates** | — | ⬜ | Atlassian Spring 2026 |
@@ -207,7 +208,7 @@ The **login** (`/login`) and **sign-up** (`/signup`) pages must expose every aut
 
 | Jira capability | Jupiter | Status | Notes |
 |-----------------|---------|--------|-------|
-| Automation rules (if X then Y) | — | ⬜ | Jira: status triggers, reminders |
+| Automation rules (if X then Y) | Automation tab | ✅ | v1.20 — create/status triggers; set status, assignee, label, comment |
 | **AI agents in workflow** | — | ⬜ | Atlassian Spring 2026: assign work to agents |
 | GitHub / Bitbucket / Slack | — | ⬜ | Jira: 3000+ marketplace integrations |
 | Webhooks / REST API | Auth + workspace snapshot API | 🟡 | `/api/workspace` bulk sync; targeted APIs in **v1.8** |

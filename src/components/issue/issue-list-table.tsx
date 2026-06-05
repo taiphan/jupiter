@@ -39,7 +39,7 @@ export const ALL_COLUMNS: ListColumn[] = [
   'key', 'type', 'summary', 'status', 'priority', 'assignee', 'dueDate', 'sprint', 'points', 'labels', 'versions',
 ];
 const DEFAULT_COLUMNS: ListColumn[] = [
-  'key', 'type', 'summary', 'status', 'priority', 'assignee', 'dueDate', 'sprint', 'points',
+  'key', 'type', 'summary', 'status', 'priority', 'assignee', 'dueDate', 'sprint', 'versions', 'points',
 ];
 export const COLUMN_LABELS: Record<ListColumn, string> = {
   key: 'Key', type: 'Type', summary: 'Summary', status: 'Status', priority: 'Priority',
@@ -457,6 +457,36 @@ function IssueRow({
     setEditingPoints(false);
   };
 
+  const toggleFixVersion = (versionId: string) => {
+    const current = issue.fixVersionIds ?? [];
+    const next = current.includes(versionId)
+      ? current.filter((id) => id !== versionId)
+      : [...current, versionId];
+    updateIssue(issue.id, { fixVersionIds: next }, userId);
+  };
+
+  const renderFixVersionBadges = (ids: string[]) => {
+    if (ids.length === 0) {
+      return <span className="text-xs text-muted-foreground">—</span>;
+    }
+    return (
+      <span className="flex flex-wrap gap-0.5">
+        {ids.map((id) => {
+          const v = projectVersions.find((pv) => pv.id === id);
+          return (
+            <Badge
+              key={id}
+              variant={v?.released ? 'secondary' : 'outline'}
+              className="text-[9px] px-1 py-0"
+            >
+              {v?.name ?? id}
+            </Badge>
+          );
+        })}
+      </span>
+    );
+  };
+
   const renderCell = (col: ListColumn) => {
     const assignee = issue.assigneeId ? members.find((m) => m.id === issue.assigneeId) : undefined;
     const sprint = issue.sprintId ? sprints.find((s) => s.id === issue.sprintId) : undefined;
@@ -610,18 +640,42 @@ function IssueRow({
 
       case 'versions': {
         const ids = issue.fixVersionIds ?? [];
-        if (ids.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
+        if (!canEdit || projectVersions.length === 0) {
+          return renderFixVersionBadges(ids);
+        }
         return (
-          <span className="flex flex-wrap gap-0.5">
-            {ids.map((id) => {
-              const v = projectVersions.find((pv) => pv.id === id);
-              return (
-                <Badge key={id} variant="outline" className="text-[9px] px-1 py-0 font-mono">
-                  {v?.name ?? id}
-                </Badge>
-              );
-            })}
-          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  className="min-w-[4rem] rounded px-1 py-0.5 text-left hover:bg-muted cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {renderFixVersionBadges(ids)}
+                </button>
+              }
+            />
+            <DropdownMenuContent align="start" className="w-44" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuLabel className="text-xs">Fix versions</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {projectVersions.map((v) => (
+                <DropdownMenuCheckboxItem
+                  key={v.id}
+                  className="cursor-pointer text-xs"
+                  checked={ids.includes(v.id)}
+                  onCheckedChange={() => toggleFixVersion(v.id)}
+                >
+                  <span className="flex items-center gap-1.5">
+                    {v.name}
+                    {v.released && (
+                      <Badge variant="secondary" className="text-[9px] px-1 py-0">Released</Badge>
+                    )}
+                  </span>
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       }
 
@@ -652,7 +706,7 @@ function IssueRow({
             col === 'summary' && 'max-w-[320px]',
             col !== 'summary' && 'whitespace-nowrap',
           )}
-          onClick={col !== 'status' && col !== 'priority' && col !== 'assignee' && col !== 'points' ? undefined : (e) => e.stopPropagation()}
+          onClick={col !== 'status' && col !== 'priority' && col !== 'assignee' && col !== 'points' && col !== 'versions' ? undefined : (e) => e.stopPropagation()}
         >
           {renderCell(col)}
         </td>

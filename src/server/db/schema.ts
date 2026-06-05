@@ -209,6 +209,19 @@ export const projectVersions = pgTable('project_versions', {
   order: integer('order').notNull().default(0),
 });
 
+// ─── Automation rules ─────────────────────────────────────────────────────────
+
+export const automationRules = pgTable('automation_rules', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  enabled: boolean('enabled').notNull().default(true),
+  trigger: jsonb('trigger').$type<import('@/lib/types').AutomationTrigger>().notNull(),
+  actions: jsonb('actions').$type<import('@/lib/types').AutomationAction[]>().notNull(),
+  order: integer('order').notNull().default(0),
+});
+
 // ─── Issues ─────────────────────────────────────────────────────────────────
 
 export const issues = pgTable(

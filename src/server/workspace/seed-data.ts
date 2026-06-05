@@ -1,6 +1,7 @@
 import type { WorkspaceSnapshot } from '@/lib/workspace-types';
 import { SEED_CUSTOM_FIELDS } from '@/lib/custom-fields-store';
 import { SEED_VERSIONS } from '@/lib/versions-store';
+import { SEED_AUTOMATION_RULES } from '@/lib/automation-store';
 import {
   SEED_MEMBERS,
   SEED_PROJECTS,
@@ -24,5 +25,6 @@ export function buildSeedWorkspaceSnapshot(): WorkspaceSnapshot {
     customFields: SEED_CUSTOM_FIELDS,
     quickFilters: [],
     versions: SEED_VERSIONS,
+    automationRules: SEED_AUTOMATION_RULES,
   };
 }

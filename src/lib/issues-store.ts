@@ -21,6 +21,7 @@ import {
   removeWatcherId,
 } from './derive/watchers';
 import { notifyIssueEventEmail } from './notify-issue-event';
+import { runAutomations } from './automation-runner';
 
 const RANK_STEP = 1000;
 /** Max attachment size kept in localStorage (1.5 MB raw → ~2 MB base64). */
@@ -58,7 +59,7 @@ interface IssuesState {
     dueDate?: string;
   }) => Issue;
 
-  updateIssue: (id: string, patch: Partial<Omit<Issue, 'id' | 'key' | 'projectId' | 'createdAt'>>, actorId: string) => void;
+  updateIssue: (id: string, patch: Partial<Omit<Issue, 'id' | 'key' | 'projectId' | 'createdAt'>>, actorId: string, options?: { skipAutomation?: boolean }) => void;
   deleteIssue: (id: string) => void;
 
   /** Move an issue between board columns; updates rank to drop at the target position. */
@@ -200,17 +201,26 @@ export const useIssuesStore = create<IssuesState>()(
           issues: [...s.issues, issue],
           activity: pushActivity(s.activity, issue.id, reporterId, 'created', 'Created this issue'),
         }));
-        return issue;
+
+        runAutomations({ event: 'issue_created', issue, actorId: reporterId });
+
+        return get().issues.find((i) => i.id === issue.id) ?? issue;
       },
 
-      updateIssue: (id, patch, actorId) =>
+      updateIssue: (id, patch, actorId, options) => {
+        let before: Issue | undefined;
+        let after: Issue | undefined;
+        let statusChanged = false;
+
         set((s) => {
-          const before = s.issues.find((i) => i.id === id);
+          before = s.issues.find((i) => i.id === id);
           if (!before) return s;
+
+          statusChanged = Boolean(patch.status && patch.status !== before.status);
 
           const beforeWatchers = before.watcherIds ?? [];
 
-          const after: Issue = {
+          after = {
             ...before,
             ...patch,
             watcherIds: patch.watcherIds ?? beforeWatchers,
@@ -275,10 +285,20 @@ export const useIssuesStore = create<IssuesState>()(
           maybeEmailForNewActivity(s.activity.length, activity, after, actorId);
 
           return {
-            issues: s.issues.map((i) => (i.id === id ? after : i)),
+            issues: s.issues.map((i) => (i.id === id ? after! : i)),
             activity,
           };
-        }),
+        });
+
+        if (!options?.skipAutomation && before && after && statusChanged) {
+          runAutomations({
+            event: 'status_changed',
+            issue: after,
+            before,
+            actorId,
+          });
+        }
+      },
 
       deleteIssue: (id) =>
         set((s) => ({
@@ -288,27 +308,30 @@ export const useIssuesStore = create<IssuesState>()(
           attachments: s.attachments.filter((a) => a.issueId !== id),
         })),
 
-      moveIssue: ({ id, toStatus, toIndex, actorId }) =>
+      moveIssue: ({ id, toStatus, toIndex, actorId }) => {
+        let previous: Issue | undefined;
+        let moved: Issue | undefined;
+
         set((s) => {
           const issue = s.issues.find((i) => i.id === id);
           if (!issue) return s;
+          previous = issue;
 
-          // Build the target column ordered by rank, excluding the moved issue
           const columnSiblings = s.issues
             .filter((i) => i.projectId === issue.projectId && i.status === toStatus && i.id !== id)
             .sort((a, b) => a.rank - b.rank);
 
           const insertAt = Math.max(0, Math.min(toIndex ?? columnSiblings.length, columnSiblings.length));
-          const before = columnSiblings[insertAt - 1];
-          const after = columnSiblings[insertAt];
+          const rankBefore = columnSiblings[insertAt - 1];
+          const rankAfter = columnSiblings[insertAt];
 
           let newRank: number;
-          if (!before && !after) newRank = RANK_STEP;
-          else if (!before && after) newRank = after.rank - RANK_STEP;
-          else if (before && !after) newRank = before.rank + RANK_STEP;
-          else newRank = (before!.rank + after!.rank) / 2;
+          if (!rankBefore && !rankAfter) newRank = RANK_STEP;
+          else if (!rankBefore && rankAfter) newRank = rankAfter.rank - RANK_STEP;
+          else if (rankBefore && !rankAfter) newRank = rankBefore.rank + RANK_STEP;
+          else newRank = (rankBefore!.rank + rankAfter!.rank) / 2;
 
-          const moved: Issue = {
+          moved = {
             ...issue,
             status: toStatus,
             rank: newRank,
@@ -324,10 +347,20 @@ export const useIssuesStore = create<IssuesState>()(
           maybeEmailForNewActivity(s.activity.length, activity, moved, actorId);
 
           return {
-            issues: s.issues.map((i) => (i.id === id ? moved : i)),
+            issues: s.issues.map((i) => (i.id === id ? moved! : i)),
             activity,
           };
-        }),
+        });
+
+        if (previous && moved && previous.status !== toStatus) {
+          runAutomations({
+            event: 'status_changed',
+            issue: moved,
+            before: previous,
+            actorId,
+          });
+        }
+      },
 
       addComment: ({ issueId, authorId, body }) => {
         const comment: Comment = {

@@ -67,7 +67,7 @@ export function ProjectSidebar({ project }: ProjectSidebarProps) {
     { label: 'All issues', href: `/issues?project=${project.id}`, icon: CheckSquare },
     { label: 'Code', href: '#', icon: Code2 },
     { label: 'Releases', href: `${baseUrl}/releases`, icon: Zap },
-    { label: 'Automation', href: '#', icon: Repeat },
+    { label: 'Automation', href: `${baseUrl}/automation`, icon: Repeat },
   ];
 
   const settings: NavItem[] = canEdit

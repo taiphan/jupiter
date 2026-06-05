@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.20.0] — 2026-06-05
+
+### Automation rules (v1.20)
+
+- **Automation page** at `/projects/{key}/automation` — create when/then rules, enable/disable, delete
+- **Triggers:** issue created (optional type filter), status changed (optional from/to)
+- **Actions:** set status, set assignee, add label, add comment
+- Rules run on create, status update, and board drag; depth-limited to avoid loops
+- **List view:** Fix versions column enabled by default with inline edit dropdown (from v1.19 follow-up)
+
 ## [1.19.0] — 2026-06-05
 
 ### Fix versions & releases (v1.19)

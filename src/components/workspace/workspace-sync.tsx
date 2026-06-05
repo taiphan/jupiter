@@ -27,6 +27,7 @@ import { useIssueLinksStore } from '@/lib/issue-links-store';
 import { useCustomFieldsStore } from '@/lib/custom-fields-store';
 import { useQuickFiltersStore } from '@/lib/quick-filters-store';
 import { useVersionsStore } from '@/lib/versions-store';
+import { useAutomationStore } from '@/lib/automation-store';
 
 const SAVE_DEBOUNCE_MS = 800;
 
@@ -103,6 +104,7 @@ export function WorkspaceSync() {
       useCustomFieldsStore.subscribe(scheduleSave),
       useQuickFiltersStore.subscribe(scheduleSave),
       useVersionsStore.subscribe(scheduleSave),
+      useAutomationStore.subscribe(scheduleSave),
     ];
 
     return () => {

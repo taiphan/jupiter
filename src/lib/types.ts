@@ -163,6 +163,53 @@ export interface ProjectVersion {
   order: number;
 }
 
+// ─── Automation rules ───────────────────────────────────────────────────────
+
+export type AutomationTriggerType = 'issue_created' | 'status_changed';
+
+export interface AutomationTrigger {
+  type: AutomationTriggerType;
+  /** For issue_created — optional issue type filter */
+  issueType?: IssueType;
+  /** For status_changed — optional source status */
+  fromStatus?: IssueStatus;
+  /** For status_changed — optional target status */
+  toStatus?: IssueStatus;
+}
+
+export type AutomationActionType = 'set_status' | 'set_assignee' | 'add_label' | 'add_comment';
+
+export interface AutomationAction {
+  type: AutomationActionType;
+  status?: IssueStatus;
+  assigneeId?: string | null;
+  label?: string;
+  commentBody?: string;
+}
+
+export interface AutomationRule {
+  id: string;
+  projectId: string;
+  name: string;
+  description?: string;
+  enabled: boolean;
+  trigger: AutomationTrigger;
+  actions: AutomationAction[];
+  order: number;
+}
+
+export const AUTOMATION_TRIGGER_LABELS: Record<AutomationTriggerType, string> = {
+  issue_created: 'Issue created',
+  status_changed: 'Status changed',
+};
+
+export const AUTOMATION_ACTION_LABELS: Record<AutomationActionType, string> = {
+  set_status: 'Set status',
+  set_assignee: 'Set assignee',
+  add_label: 'Add label',
+  add_comment: 'Add comment',
+};
+
 // ─── Attachments ────────────────────────────────────────────────────────────
 
 export interface Attachment {

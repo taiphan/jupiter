@@ -6,6 +6,7 @@ import { useIssueLinksStore } from '@/lib/issue-links-store';
 import { useCustomFieldsStore } from '@/lib/custom-fields-store';
 import { useQuickFiltersStore } from '@/lib/quick-filters-store';
 import { useVersionsStore } from '@/lib/versions-store';
+import { useAutomationStore } from '@/lib/automation-store';
 
 export function collectWorkspaceSnapshot(): WorkspaceSnapshot {
   const projects = useProjectsStore.getState();
@@ -15,6 +16,7 @@ export function collectWorkspaceSnapshot(): WorkspaceSnapshot {
   const fields = useCustomFieldsStore.getState();
   const quick = useQuickFiltersStore.getState();
   const versions = useVersionsStore.getState();
+  const automation = useAutomationStore.getState();
 
   return {
     projects: projects.projects,
@@ -28,6 +30,7 @@ export function collectWorkspaceSnapshot(): WorkspaceSnapshot {
     customFields: fields.fields,
     quickFilters: quick.custom,
     versions: versions.versions,
+    automationRules: automation.rules,
   };
 }
 
@@ -47,4 +50,5 @@ export function applyWorkspaceSnapshot(snapshot: WorkspaceSnapshot): void {
   useCustomFieldsStore.setState({ fields: snapshot.customFields });
   useQuickFiltersStore.setState({ custom: snapshot.quickFilters });
   useVersionsStore.setState({ versions: snapshot.versions ?? [] });
+  useAutomationStore.setState({ rules: snapshot.automationRules ?? [] });
 }

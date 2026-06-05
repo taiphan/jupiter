@@ -9,6 +9,7 @@ import type {
   CustomFieldDef,
   Member,
   ProjectVersion,
+  AutomationRule,
 } from '@/lib/types';
 import type { QuickFilter } from '@/lib/quick-filters-store';
 import type {
@@ -235,6 +236,34 @@ export function versionToInsert(v: ProjectVersion) {
     releaseDate: v.releaseDate ?? null,
     released: v.released,
     order: v.order,
+  };
+}
+
+export function mapAutomationRuleRow(
+  row: typeof schema.automationRules.$inferSelect,
+): AutomationRule {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    name: row.name,
+    description: row.description ?? undefined,
+    enabled: row.enabled,
+    trigger: row.trigger,
+    actions: row.actions,
+    order: row.order,
+  };
+}
+
+export function automationRuleToInsert(r: AutomationRule) {
+  return {
+    id: r.id,
+    projectId: r.projectId,
+    name: r.name,
+    description: r.description ?? null,
+    enabled: r.enabled,
+    trigger: r.trigger,
+    actions: r.actions,
+    order: r.order,
   };
 }
 
