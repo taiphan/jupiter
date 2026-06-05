@@ -32,7 +32,7 @@ import {
 } from '@/lib/types';
 import type { Issue, IssueStatus, IssueType, Priority, CustomFieldValue } from '@/lib/types';
 import { timeAgo, formatBytes } from '@/lib/utils';
-import { canTransition as isWorkflowTransitionAllowed } from '@/lib/workflow-transitions';
+import { canTransition as isWorkflowTransitionAllowed, getAllowedTargets } from '@/lib/workflow-transitions';
 import { formatDueDate, isOverdue } from '@/lib/derive/due-date';
 import { IssueTypeIcon } from './issue-icon';
 import { PriorityIcon } from './priority-icon';
@@ -89,6 +89,8 @@ function IssueDialogBody({
   const project = useProjectsStore((s) => issue ? s.getProject(issue.projectId) : undefined);
   const members = useProjectsStore((s) => s.members);
   const user = useAuthStore((s) => s.user);
+  const allIssues = useIssuesStore((s) => s.issues);
+  const handleNavigate = useCallback(onNavigate, [onNavigate]);
 
   const [editingSummary, setEditingSummary] = useState(false);
   const [summaryValue, setSummaryValue] = useState('');
@@ -113,12 +115,14 @@ function IssueDialogBody({
   const canTransition = hasPermission(user.role, 'issues.transition');
   const canComment = hasPermission(user.role, 'comments.create');
 
-  const allIssues = useIssuesStore((s) => s.issues);
+  const statusOptions = STATUSES.filter(
+    (s) => s === issue.status || getAllowedTargets(user.role, issue.status, project).includes(s),
+  );
+
   const reporter = members.find((m) => m.id === issue.reporterId);
   const assignee = issue.assigneeId ? members.find((m) => m.id === issue.assigneeId) : undefined;
   const parentIssue = issue.parentId ? allIssues.find((i) => i.id === issue.parentId) : undefined;
   const projectMembers = project ? members.filter((m) => project.memberIds.includes(m.id)) : members;
-  const handleNavigate = useCallback(onNavigate, [onNavigate]);
   const comments = getCommentsForIssue(issue.id);
   const activity = getActivityForIssue(issue.id);
 
@@ -396,7 +400,7 @@ function IssueDialogBody({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STATUSES.map((s) => (
+                {statusOptions.map((s) => (
                   <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
                 ))}
               </SelectContent>

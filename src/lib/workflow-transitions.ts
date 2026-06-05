@@ -24,8 +24,26 @@ export function buildDefaultTransitionRules(): TransitionRules {
 
 export const DEFAULT_TRANSITION_RULES = buildDefaultTransitionRules();
 
+/** Merge project overrides with defaults per role and from-status. */
+export function resolveTransitionRules(project?: Project | null): TransitionRules {
+  const result = {} as TransitionRules;
+  for (const role of ['admin', 'lead', 'member', 'viewer'] as UserRole[]) {
+    const roleDefault = DEFAULT_TRANSITION_RULES[role]!;
+    const overrides = project?.transitionRules?.[role];
+    result[role] = Object.fromEntries(
+      STATUSES.map((from) => [
+        from,
+        overrides?.[from] !== undefined
+          ? [...overrides[from]!]
+          : [...(roleDefault[from] ?? ALL_STATUSES)],
+      ]),
+    ) as TransitionRules[UserRole];
+  }
+  return result;
+}
+
 function rulesForRole(role: UserRole, project?: Project | null): TransitionRules[UserRole] {
-  return project?.transitionRules?.[role] ?? DEFAULT_TRANSITION_RULES[role];
+  return resolveTransitionRules(project)[role]!;
 }
 
 /** Target statuses allowed from `from` for this role. */

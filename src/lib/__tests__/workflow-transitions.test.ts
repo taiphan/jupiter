@@ -24,6 +24,28 @@ describe('canTransition', () => {
     expect(canTransition('member', 'todo', 'in-progress', project)).toBe(true);
     expect(canTransition('member', 'todo', 'done', project)).toBe(false);
   });
+
+  it('merges partial role rules with defaults for other from-statuses', () => {
+    const project = {
+      transitionRules: {
+        member: { todo: ['in-progress'] },
+      },
+    } as Parameters<typeof canTransition>[3];
+
+    expect(canTransition('member', 'backlog', 'done', project)).toBe(true);
+    expect(getAllowedTargets('member', 'backlog', project)).toEqual(DEFAULT_TRANSITION_RULES.member!.backlog);
+  });
+
+  it('does not widen viewer restrictions when role overrides are partial', () => {
+    const project = {
+      transitionRules: {
+        viewer: { todo: [] },
+      },
+    } as unknown as Parameters<typeof canTransition>[3];
+
+    expect(canTransition('viewer', 'todo', 'in-progress', project)).toBe(false);
+    expect(canTransition('viewer', 'backlog', 'todo', project)).toBe(false);
+  });
 });
 
 describe('getAllowedTargets', () => {

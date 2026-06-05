@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.18.0] — 2026-06-05
+
+### Workflow transition rules editor (v1.18)
+
+- **Transition rules matrix** in Board config: per-role from→to checkbox grid
+- Role selector (Admin, Lead, Member, Viewer); row All/None shortcuts
+- Save and reset to defaults; rules persist on `Project.transitionRules`
+- Issue dialog status dropdown filtered to allowed targets only
+- Enforced on board drag, list inline edit, and dialog (existing)
+
+### Fixes
+
+- **Issue dialog:** hooks called after early return (Rules of Hooks crash)
+- **Transition rules:** partial project rules now merge with role defaults (no accidental allow-all)
+- **Timeline:** Gantt bars use solid status colors instead of light badge classes
+
 ## [1.17.0] — 2026-06-05
 
 ### Timeline / Roadmap view (v1.17)

@@ -32,10 +32,10 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Backlog | Backlog tab | ✅ | Filter + reorder |
 | Summary / space home | Summary tab | ✅ | KPIs and recent activity |
 | **List view** (spreadsheet) | `/projects/{key}/list` | ✅ | v1.14: column picker, group by 6 axes, inline edit, bulk actions, CSV export |
-| **Calendar view** | — | ⬜ | Jira: due-date calendar |
+| **Calendar view** | `/projects/{key}/calendar` | ✅ | Month grid, due-date chips, drag to reschedule, create on day click |
 | **For You** home | My Work (`/`) | ✅ | v1.13: Due soon, What changed, Watching, Assigned, Reported |
 | Board configuration | Board config | ✅ | Column ↔ status mapping per project |
-| Quick filters on board | — | ⬜ | Jira: save filter chips on board |
+| Quick filters on board | Board, Backlog, List | ✅ | Built-in chips + save custom filters per project |
 
 ---
 
@@ -193,7 +193,7 @@ The **login** (`/login`) and **sign-up** (`/signup`) pages must expose every aut
 |-----------------|---------|--------|-------|
 | Roles & permissions | admin / lead / member / viewer | ✅ | Route + action guards |
 | Project settings | Settings tab | ✅ | Name, key, lead, members |
-| Workflow editor (visual) | Status columns via board config | 🟡 | Column mapping only; no transition rules UI |
+| Workflow editor (visual) | Board config → transition rules | ✅ | v1.18 — per-role from→to matrix; enforced on board, list, dialog |
 | Audit log | `/audit` | 🟡 | Issue `activity` in Postgres via workspace sync; read via client store — **v1.8:** paginated API + optional workspace events |
 | **Authentication settings (admin)** | Settings → Authentication & email | ✅ | v1.10: SMTP, Google OAuth, 2FA flag, test email |
 | **Delegated permissions / templates** | — | ⬜ | Atlassian Spring 2026 |

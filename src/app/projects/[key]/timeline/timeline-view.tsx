@@ -9,7 +9,7 @@ import { useIssueLinksStore } from '@/lib/issue-links-store';
 import { IssueDialog } from '@/components/issue/issue-dialog';
 import { IssueTypeIcon } from '@/components/issue/issue-icon';
 import type { Issue } from '@/lib/types';
-import { STATUS_COLORS, STATUS_LABELS } from '@/lib/types';
+import { STATUS_DEFAULTS } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -352,7 +352,7 @@ export function TimelineView({ projectKey }: TimelineViewProps) {
                 const geom = computeBar(issue, viewStart, dayW, totalDays);
                 if (!geom) return null;
 
-                const statusColour = STATUS_COLORS[issue.status];
+                const barColor = STATUS_DEFAULTS[issue.status].color;
                 const top = rowIdx * ROW_H + 6;
                 const height = ROW_H - 12;
 
@@ -363,14 +363,14 @@ export function TimelineView({ projectKey }: TimelineViewProps) {
                     onClick={() => setOpenIssueId(issue.id)}
                     className={cn(
                       'absolute rounded cursor-pointer select-none overflow-hidden flex items-center px-1.5 text-[10px] font-medium transition-opacity hover:opacity-80',
-                      statusColour,
-                      geom.isPlaceholder && 'opacity-50 border border-dashed',
+                      geom.isPlaceholder && 'opacity-50 border border-dashed border-foreground/30',
                     )}
                     style={{
                       top,
                       left: geom.left,
                       width: Math.max(geom.width, 8),
                       height,
+                      backgroundColor: barColor,
                     }}
                   >
                     <span className="truncate text-white drop-shadow-sm">{issue.key}</span>
