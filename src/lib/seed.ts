@@ -51,7 +51,7 @@ const now = new Date('2026-06-02T10:00:00.000Z').toISOString();
 const earlier = new Date('2026-05-28T10:00:00.000Z').toISOString();
 const yesterday = new Date('2026-06-01T10:00:00.000Z').toISOString();
 
-const SEED_ISSUES_RAW: Omit<Issue, 'watcherIds'>[] = [
+const SEED_ISSUES_RAW: (Omit<Issue, 'watcherIds' | 'fixVersionIds'> & { fixVersionIds?: string[] })[] = [
   // WEB
   {
     id: 'iss_web_1', key: 'WEB-1', projectId: 'prj_web', type: 'epic',
@@ -69,7 +69,7 @@ const SEED_ISSUES_RAW: Omit<Issue, 'watcherIds'>[] = [
     status: 'in-progress', priority: 'high',
     assigneeId: 'usr_member', reporterId: 'usr_lead',
     labels: ['design'], parentId: 'iss_web_1', storyPoints: 3, rank: 2000, sprintId: 'spr_web_3',
-    dueDate: '2026-06-05',
+    dueDate: '2026-06-05', fixVersionIds: ['ver_web_2'],
     createdAt: earlier, updatedAt: yesterday,
   },
   {
@@ -97,6 +97,7 @@ const SEED_ISSUES_RAW: Omit<Issue, 'watcherIds'>[] = [
     status: 'done', priority: 'low',
     assigneeId: 'usr_member', reporterId: 'usr_lead',
     labels: ['analytics'], storyPoints: 2, rank: 5000, sprintId: 'spr_web_2',
+    fixVersionIds: ['ver_web_1'],
     createdAt: earlier, updatedAt: yesterday,
   },
   {
@@ -207,6 +208,7 @@ const SEED_ISSUES_RAW: Omit<Issue, 'watcherIds'>[] = [
 
 export const SEED_ISSUES: Issue[] = SEED_ISSUES_RAW.map((i) => ({
   ...i,
+  fixVersionIds: i.fixVersionIds ?? [],
   watcherIds: defaultWatchersForIssue(i.reporterId, i.assigneeId),
 }));
 

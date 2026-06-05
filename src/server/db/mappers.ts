@@ -8,6 +8,7 @@ import type {
   IssueLink,
   CustomFieldDef,
   Member,
+  ProjectVersion,
 } from '@/lib/types';
 import type { QuickFilter } from '@/lib/quick-filters-store';
 import type {
@@ -92,6 +93,7 @@ export function mapIssueRow(row: DbIssue): Issue {
     storyPoints: row.storyPoints ?? undefined,
     startDate: row.startDate ?? undefined,
     dueDate: row.dueDate ?? undefined,
+    fixVersionIds: (row.fixVersionIds as string[]) ?? [],
     customFields: row.customFields ?? undefined,
     watcherIds: (row.watcherIds as string[]) ?? [],
     rank: row.rank,
@@ -118,6 +120,7 @@ export function issueToInsert(i: Issue) {
     storyPoints: i.storyPoints ?? null,
     startDate: i.startDate ?? null,
     dueDate: i.dueDate ?? null,
+    fixVersionIds: i.fixVersionIds ?? [],
     customFields: i.customFields ?? null,
     watcherIds: i.watcherIds ?? [],
     rank: i.rank,
@@ -208,6 +211,30 @@ export function mapIssueLinkRow(row: DbIssueLink): IssueLink {
     toIssueId: row.toIssueId,
     createdAt: row.createdAt.toISOString(),
     createdBy: row.createdBy,
+  };
+}
+
+export function mapVersionRow(row: typeof schema.projectVersions.$inferSelect): ProjectVersion {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    name: row.name,
+    description: row.description ?? undefined,
+    releaseDate: row.releaseDate ?? undefined,
+    released: row.released,
+    order: row.order,
+  };
+}
+
+export function versionToInsert(v: ProjectVersion) {
+  return {
+    id: v.id,
+    projectId: v.projectId,
+    name: v.name,
+    description: v.description ?? null,
+    releaseDate: v.releaseDate ?? null,
+    released: v.released,
+    order: v.order,
   };
 }
 

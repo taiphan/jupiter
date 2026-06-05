@@ -1,4 +1,4 @@
-import type { Project, Issue, Comment, ActivityEntry, Attachment, Sprint, IssueLink, CustomFieldDef } from './types';
+import type { Project, Issue, Comment, ActivityEntry, Attachment, Sprint, IssueLink, CustomFieldDef, ProjectVersion } from './types';
 import type { Member } from './types';
 import type { QuickFilter } from './quick-filters-store';
 
@@ -14,4 +14,5 @@ export type WorkspaceSnapshot = {
   issueLinks: IssueLink[];
   customFields: CustomFieldDef[];
   quickFilters: QuickFilter[];
+  versions: ProjectVersion[];
 };

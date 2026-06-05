@@ -189,6 +189,7 @@ export const useIssuesStore = create<IssuesState>()(
           storyPoints,
           startDate,
           dueDate,
+          fixVersionIds: [],
           rank: lastRank + RANK_STEP,
           watcherIds: defaultWatchersForIssue(reporterId, assigneeId),
           createdAt: nowIso(),
@@ -257,6 +258,12 @@ export const useIssuesStore = create<IssuesState>()(
           if ('dueDate' in patch && patch.dueDate !== before.dueDate) {
             activity = pushActivity(activity, id, actorId, 'label',
               patch.dueDate ? `Due date set to ${patch.dueDate}` : 'Due date cleared');
+          }
+          if (
+            patch.fixVersionIds &&
+            JSON.stringify(patch.fixVersionIds) !== JSON.stringify(before.fixVersionIds ?? [])
+          ) {
+            activity = pushActivity(activity, id, actorId, 'label', 'Fix versions updated');
           }
           if (
             patch.watcherIds &&
@@ -429,6 +436,7 @@ export const useIssuesStore = create<IssuesState>()(
           ...p,
           issues: p.issues.map((i) => ({
             ...i,
+            fixVersionIds: i.fixVersionIds ?? [],
             watcherIds:
               i.watcherIds ??
               defaultWatchersForIssue(i.reporterId, i.assigneeId),

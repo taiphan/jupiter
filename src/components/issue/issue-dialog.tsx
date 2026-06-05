@@ -23,6 +23,7 @@ import { Separator } from '@/components/ui/separator';
 import { useIssuesStore, MAX_ATTACHMENT_BYTES } from '@/lib/issues-store';
 import { useProjectsStore } from '@/lib/projects-store';
 import { useCustomFieldsStore } from '@/lib/custom-fields-store';
+import { useVersionsStore } from '@/lib/versions-store';
 import { useAuthStore } from '@/lib/auth-store';
 import { hasPermission } from '@/lib/permissions';
 import {
@@ -90,6 +91,9 @@ function IssueDialogBody({
   const members = useProjectsStore((s) => s.members);
   const user = useAuthStore((s) => s.user);
   const allIssues = useIssuesStore((s) => s.issues);
+  const projectVersions = useVersionsStore((s) =>
+    s.getVersionsForProject(issue?.projectId ?? ''),
+  );
   const handleNavigate = useCallback(onNavigate, [onNavigate]);
 
   const [editingSummary, setEditingSummary] = useState(false);
@@ -162,6 +166,14 @@ function IssueDialogBody({
 
   const removeLabel = (label: string) => {
     updateIssue(issue.id, { labels: issue.labels.filter((l) => l !== label) }, user.id);
+  };
+
+  const toggleFixVersion = (versionId: string) => {
+    const current = issue.fixVersionIds ?? [];
+    const next = current.includes(versionId)
+      ? current.filter((id) => id !== versionId)
+      : [...current, versionId];
+    updateIssue(issue.id, { fixVersionIds: next }, user.id);
   };
 
   const handleDelete = () => {
@@ -560,6 +572,40 @@ function IssueDialogBody({
                 {isOverdue(issue) ? ' · Overdue' : ''}
               </span>
             )}
+          </FieldRow>
+
+          <FieldRow label="Fix versions">
+            <div className="flex flex-wrap gap-1">
+              {projectVersions.length === 0 ? (
+                <span className="text-xs text-muted-foreground">No versions</span>
+              ) : canEdit ? (
+                projectVersions.map((v) => {
+                  const selected = (issue.fixVersionIds ?? []).includes(v.id);
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => toggleFixVersion(v.id)}
+                      className="cursor-pointer"
+                    >
+                      <Badge variant={selected ? 'default' : 'outline'} className="text-[10px]">
+                        {v.name}
+                        {v.released ? ' ✓' : ''}
+                      </Badge>
+                    </button>
+                  );
+                })
+              ) : (issue.fixVersionIds ?? []).length === 0 ? (
+                <span className="text-xs text-muted-foreground">None</span>
+              ) : (
+                (issue.fixVersionIds ?? []).map((id) => {
+                  const v = projectVersions.find((pv) => pv.id === id);
+                  return v ? (
+                    <Badge key={id} variant="secondary" className="text-[10px]">{v.name}</Badge>
+                  ) : null;
+                })
+              )}
+            </div>
           </FieldRow>
 
           <FieldRow label="Labels">

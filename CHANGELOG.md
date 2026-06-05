@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.19.0] — 2026-06-05
+
+### Fix versions & releases (v1.19)
+
+- **Releases page** at `/projects/{key}/releases` — create versions, mark released, delete, expand issue list per version
+- **Fix versions on issues** — multi-select in issue dialog; optional column in list view
+- **Data model** — `ProjectVersion` store, `fixVersionIds` on issues, Postgres `project_versions` table + workspace sync
+- **CSV export** — Fix Versions column on issues export
+
 ## [1.18.1] — 2026-06-05
 
 ### Bug fixes

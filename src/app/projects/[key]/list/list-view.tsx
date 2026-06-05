@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { downloadCsv, issuesToCsv } from '@/lib/export/csv';
+import { useVersionsStore } from '@/lib/versions-store';
 import type { Issue } from '@/lib/types';
 
 export function ListView({ projectKey }: { projectKey: string }) {
@@ -24,6 +25,7 @@ export function ListView({ projectKey }: { projectKey: string }) {
   const members = useProjectsStore((s) => s.members);
   const issues = useIssuesStore((s) => s.issues);
   const getSprintsByProject = useSprintsStore((s) => s.getSprintsByProject);
+  const versions = useVersionsStore((s) => s.versions);
   const user = useAuthStore((s) => s.user);
   const forProject = useQuickFiltersStore((s) => s.forProject);
 
@@ -65,6 +67,8 @@ export function ListView({ projectKey }: { projectKey: string }) {
       members,
       projects: allProjects,
       resolveSprintName: (id) => sprints.find((s) => s.id === id)?.name ?? '',
+      resolveVersionNames: (ids) =>
+        ids.map((id) => versions.find((v) => v.id === id)?.name ?? id).join('; '),
     });
     downloadCsv(`${project.key}-list-${new Date().toISOString().slice(0, 10)}`, csv);
   };

@@ -13,6 +13,8 @@ import {
   mapCustomFieldRow,
   mapIssueLinkRow,
   mapQuickFilterRow,
+  mapVersionRow,
+  versionToInsert,
   projectToInsert,
   issueToInsert,
   sprintToInsert,
@@ -34,6 +36,7 @@ export async function loadWorkspace(): Promise<WorkspaceSnapshot> {
     fieldRows,
     linkRows,
     quickFilterRows,
+    versionRows,
   ] = await Promise.all([
     db.select().from(schema.users),
     db.select().from(schema.projects),
@@ -46,6 +49,7 @@ export async function loadWorkspace(): Promise<WorkspaceSnapshot> {
     db.select().from(schema.customFields),
     db.select().from(schema.issueLinks),
     db.select().from(schema.quickFilters),
+    db.select().from(schema.projectVersions),
   ]);
 
   const membersByProject = new Map<string, string[]>();
@@ -68,6 +72,7 @@ export async function loadWorkspace(): Promise<WorkspaceSnapshot> {
     customFields: fieldRows.map(mapCustomFieldRow),
     issueLinks: linkRows.map(mapIssueLinkRow),
     quickFilters: quickFilterRows.map(mapQuickFilterRow),
+    versions: versionRows.map(mapVersionRow),
   };
 }
 
@@ -147,8 +152,11 @@ export async function saveWorkspace(snapshot: WorkspaceSnapshot): Promise<void> 
             parentId: i.parentId ?? null,
             sprintId: i.sprintId ?? null,
             storyPoints: i.storyPoints ?? null,
+            startDate: i.startDate ?? null,
             dueDate: i.dueDate ?? null,
+            fixVersionIds: i.fixVersionIds ?? [],
             customFields: i.customFields ?? null,
+            watcherIds: i.watcherIds ?? [],
             rank: i.rank,
             updatedAt: issueToInsert(i).updatedAt,
           },
@@ -266,11 +274,28 @@ export async function saveWorkspace(snapshot: WorkspaceSnapshot): Promise<void> 
         });
     }
 
+    for (const v of snapshot.versions ?? []) {
+      await tx
+        .insert(schema.projectVersions)
+        .values(versionToInsert(v))
+        .onConflictDoUpdate({
+          target: schema.projectVersions.id,
+          set: {
+            name: v.name,
+            description: v.description ?? null,
+            releaseDate: v.releaseDate ?? null,
+            released: v.released,
+            order: v.order,
+          },
+        });
+    }
+
     // Remove rows deleted on the client (scoped to known project/issue ids)
     const snapshotCommentIds = new Set(snapshot.comments.map((c) => c.id));
     const snapshotLinkIds = new Set(snapshot.issueLinks.map((l) => l.id));
     const snapshotFieldIds = new Set(snapshot.customFields.map((f) => f.id));
     const snapshotQuickIds = new Set(snapshot.quickFilters.map((q) => q.id));
+    const snapshotVersionIds = new Set((snapshot.versions ?? []).map((v) => v.id));
     const snapshotSprintIds = new Set(snapshot.sprints.map((s) => s.id));
 
     if (issueIds.length > 0) {
@@ -318,6 +343,17 @@ export async function saveWorkspace(snapshot: WorkspaceSnapshot): Promise<void> 
         .map((r) => r.id);
       if (toDeleteQuick.length > 0) {
         await tx.delete(schema.quickFilters).where(inArray(schema.quickFilters.id, toDeleteQuick));
+      }
+
+      const existingVersions = await tx
+        .select({ id: schema.projectVersions.id })
+        .from(schema.projectVersions)
+        .where(inArray(schema.projectVersions.projectId, projectIds));
+      const toDeleteVersions = existingVersions
+        .filter((r) => !snapshotVersionIds.has(r.id))
+        .map((r) => r.id);
+      if (toDeleteVersions.length > 0) {
+        await tx.delete(schema.projectVersions).where(inArray(schema.projectVersions.id, toDeleteVersions));
       }
 
       const existingSprints = await tx

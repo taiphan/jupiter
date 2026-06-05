@@ -22,6 +22,7 @@ describe('issue mappers', () => {
       startDate: null,
       dueDate: '2026-06-05',
       customFields: null,
+      fixVersionIds: ['ver_web_1'],
       watcherIds: ['usr_admin'],
       rank: 1000,
       createdAt: new Date('2026-06-01T00:00:00.000Z'),
@@ -31,8 +32,10 @@ describe('issue mappers', () => {
     const issue = mapIssueRow(row);
     expect(issue.dueDate).toBe('2026-06-05');
     expect(issue.watcherIds).toEqual(['usr_admin']);
+    expect(issue.fixVersionIds).toEqual(['ver_web_1']);
 
     const insert = issueToInsert(issue);
     expect(insert.dueDate).toBe('2026-06-05');
+    expect(insert.fixVersionIds).toEqual(['ver_web_1']);
   });
 });

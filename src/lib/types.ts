@@ -150,6 +150,19 @@ export interface CustomFieldDef {
 /** Stored value can be string | number | boolean depending on field type. */
 export type CustomFieldValue = string | number | boolean | undefined;
 
+// ─── Fix versions / releases ────────────────────────────────────────────────
+
+export interface ProjectVersion {
+  id: string;
+  projectId: string;
+  name: string;
+  description?: string;
+  /** Target or actual release day (YYYY-MM-DD) */
+  releaseDate?: string;
+  released: boolean;
+  order: number;
+}
+
 // ─── Attachments ────────────────────────────────────────────────────────────
 
 export interface Attachment {
@@ -190,6 +203,8 @@ export const issueSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   /** Due date (calendar day, YYYY-MM-DD) */
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  /** Fix versions this issue is scheduled for (project version ids) */
+  fixVersionIds: z.array(z.string()).default([]),
   /** Values for project-defined custom fields, keyed by field id */
   customFields: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   /** Position within its column for stable ordering on the board */

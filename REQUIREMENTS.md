@@ -56,7 +56,7 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Watchers | Issue panel + notifications | ✅ | v1.12 — watch/unwatch, add/remove, notify on activity |
 | In-app notifications (read state) | Bell + activity-derived feed | 🟡 | Feed from `activity`; watchers in v1.12; read state via API (v1.8) |
 | Votes | — | — | |
-| Due dates / fix versions | — | ⬜ | |
+| Due dates / fix versions | Releases + issue dialog | ✅ | v1.19 — fix versions per project; due dates since v1.5 |
 | Subtasks on board | Parent/child in model | ✅ | v1.16 — subtask panel, parent breadcrumb, inline add, parent picker in create dialog, backlog indentation |
 
 ---
@@ -194,6 +194,7 @@ The **login** (`/login`) and **sign-up** (`/signup`) pages must expose every aut
 | Roles & permissions | admin / lead / member / viewer | ✅ | Route + action guards |
 | Project settings | Settings tab | ✅ | Name, key, lead, members |
 | Workflow editor (visual) | Board config → transition rules | ✅ | v1.18 — per-role from→to matrix; enforced on board, list, dialog |
+| Fix versions / releases | `/projects/{key}/releases` | ✅ | v1.19 — version CRUD, issue assignment, list column |
 | Audit log | `/audit` | 🟡 | Issue `activity` in Postgres via workspace sync; read via client store — **v1.8:** paginated API + optional workspace events |
 | **Authentication settings (admin)** | Settings → Authentication & email | ✅ | v1.10: SMTP, Google OAuth, 2FA flag, test email |
 | **Delegated permissions / templates** | — | ⬜ | Atlassian Spring 2026 |

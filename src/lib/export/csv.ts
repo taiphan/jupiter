@@ -18,6 +18,7 @@ export function issuesToCsv(
     members: Member[];
     projects: Project[];
     resolveSprintName?: (sprintId: string | undefined) => string;
+    resolveVersionNames?: (versionIds: string[]) => string;
   },
 ): string {
   const memberName = (id?: string) =>
@@ -37,6 +38,7 @@ export function issuesToCsv(
     'Story Points',
     'Due Date',
     'Sprint',
+    'Fix Versions',
     'Labels',
     'Created',
     'Updated',
@@ -55,6 +57,7 @@ export function issuesToCsv(
       i.storyPoints ?? '',
       i.dueDate ?? '',
       opts.resolveSprintName?.(i.sprintId) ?? '',
+      opts.resolveVersionNames?.(i.fixVersionIds ?? []) ?? '',
       i.labels.join('; '),
       i.createdAt,
       i.updatedAt,

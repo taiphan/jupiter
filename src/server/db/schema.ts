@@ -197,6 +197,18 @@ export const customFields = pgTable('custom_fields', {
   order: integer('order').notNull().default(0),
 });
 
+// ─── Project fix versions ───────────────────────────────────────────────────
+
+export const projectVersions = pgTable('project_versions', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  releaseDate: text('release_date'),
+  released: boolean('released').notNull().default(false),
+  order: integer('order').notNull().default(0),
+});
+
 // ─── Issues ─────────────────────────────────────────────────────────────────
 
 export const issues = pgTable(
@@ -220,6 +232,7 @@ export const issues = pgTable(
     startDate: text('start_date'),
     /** Calendar day (YYYY-MM-DD) for list/calendar views */
     dueDate: text('due_date'),
+    fixVersionIds: jsonb('fix_version_ids').$type<string[]>().notNull().default([]),
     customFields: jsonb('custom_fields').$type<Record<string, string | number | boolean>>(),
     watcherIds: jsonb('watcher_ids').$type<string[]>().notNull().default([]),
     rank: doublePrecision('rank').notNull(),

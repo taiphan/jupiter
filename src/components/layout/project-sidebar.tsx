@@ -66,7 +66,7 @@ export function ProjectSidebar({ project }: ProjectSidebarProps) {
   const development: NavItem[] = [
     { label: 'All issues', href: `/issues?project=${project.id}`, icon: CheckSquare },
     { label: 'Code', href: '#', icon: Code2 },
-    { label: 'Releases', href: '#', icon: Zap },
+    { label: 'Releases', href: `${baseUrl}/releases`, icon: Zap },
     { label: 'Automation', href: '#', icon: Repeat },
   ];
 

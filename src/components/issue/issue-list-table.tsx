@@ -28,21 +28,22 @@ import { IssueTypeIcon } from './issue-icon';
 import { PriorityIcon } from './priority-icon';
 import { UserAvatar } from './user-avatar';
 import { formatDueDate, isOverdue } from '@/lib/derive/due-date';
+import { useVersionsStore } from '@/lib/versions-store';
 import { cn } from '@/lib/utils';
 
 export type ListSortKey = 'key' | 'status' | 'priority' | 'dueDate' | 'updatedAt' | 'points';
-export type ListColumn = 'key' | 'type' | 'summary' | 'status' | 'priority' | 'assignee' | 'dueDate' | 'sprint' | 'points' | 'labels';
+export type ListColumn = 'key' | 'type' | 'summary' | 'status' | 'priority' | 'assignee' | 'dueDate' | 'sprint' | 'points' | 'labels' | 'versions';
 export type GroupBy = 'none' | 'epic' | 'status' | 'sprint' | 'assignee' | 'priority';
 
 export const ALL_COLUMNS: ListColumn[] = [
-  'key', 'type', 'summary', 'status', 'priority', 'assignee', 'dueDate', 'sprint', 'points', 'labels',
+  'key', 'type', 'summary', 'status', 'priority', 'assignee', 'dueDate', 'sprint', 'points', 'labels', 'versions',
 ];
 const DEFAULT_COLUMNS: ListColumn[] = [
   'key', 'type', 'summary', 'status', 'priority', 'assignee', 'dueDate', 'sprint', 'points',
 ];
 export const COLUMN_LABELS: Record<ListColumn, string> = {
   key: 'Key', type: 'Type', summary: 'Summary', status: 'Status', priority: 'Priority',
-  assignee: 'Assignee', dueDate: 'Due date', sprint: 'Sprint', points: 'Points', labels: 'Labels',
+  assignee: 'Assignee', dueDate: 'Due date', sprint: 'Sprint', points: 'Points', labels: 'Labels', versions: 'Fix versions',
 };
 export const GROUP_BY_LABELS: Record<GroupBy, string> = {
   none: 'No grouping', epic: 'Epic', status: 'Status', sprint: 'Sprint',
@@ -445,6 +446,7 @@ function IssueRow({
   canEdit, canTransition, userId, userRole, project,
 }: RowProps) {
   const updateIssue = useIssuesStore((s) => s.updateIssue);
+  const projectVersions = useVersionsStore((s) => s.getVersionsForProject(issue.projectId));
   const [editingPoints, setEditingPoints] = useState(false);
   const [pointsVal, setPointsVal] = useState(String(issue.storyPoints ?? ''));
   const pointsRef = useRef<HTMLInputElement>(null);
@@ -605,6 +607,23 @@ function IssueRow({
               : issue.labels.map((l) => <Badge key={l} variant="secondary" className="text-[9px] px-1 py-0">{l}</Badge>)}
           </span>
         );
+
+      case 'versions': {
+        const ids = issue.fixVersionIds ?? [];
+        if (ids.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
+        return (
+          <span className="flex flex-wrap gap-0.5">
+            {ids.map((id) => {
+              const v = projectVersions.find((pv) => pv.id === id);
+              return (
+                <Badge key={id} variant="outline" className="text-[9px] px-1 py-0 font-mono">
+                  {v?.name ?? id}
+                </Badge>
+              );
+            })}
+          </span>
+        );
+      }
 
       default:
         return null;

@@ -23,12 +23,14 @@ import { IssueDialog } from '@/components/issue/issue-dialog';
 import { CreateIssueDialog } from '@/components/issue/create-issue-dialog';
 import { parseJql, runJql, validateJql, type JqlContext } from '@/lib/jql';
 import { downloadCsv, issuesToCsv } from '@/lib/export/csv';
+import { useVersionsStore } from '@/lib/versions-store';
 
 function IssuesPageInner() {
   const issues = useIssuesStore((s) => s.issues);
   const projects = useProjectsStore((s) => s.projects);
   const members = useProjectsStore((s) => s.members);
   const sprints = useSprintsStore((s) => s.sprints);
+  const versions = useVersionsStore((s) => s.versions);
   const user = useAuthStore((s) => s.user);
   const params = useSearchParams();
 
@@ -134,6 +136,8 @@ function IssuesPageInner() {
                   projects,
                   resolveSprintName: (id) =>
                     sprints.find((s) => s.id === id)?.name ?? '',
+                  resolveVersionNames: (ids) =>
+                    ids.map((id) => versions.find((v) => v.id === id)?.name ?? id).join('; '),
                 });
                 downloadCsv(`jupiter-issues-${new Date().toISOString().slice(0, 10)}`, csv);
               }}
