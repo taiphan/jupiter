@@ -38,6 +38,7 @@ import { IssueTypeIcon } from './issue-icon';
 import { PriorityIcon } from './priority-icon';
 import { UserAvatar } from './user-avatar';
 import { IssueWatchers } from './issue-watchers';
+import { IssueLinksPanel } from './issue-links-panel';
 
 interface IssueDialogProps {
   issueId: string | null;
@@ -235,6 +236,9 @@ function IssueDialogBody({ issueId, onClose }: { issueId: string; onClose: () =>
 
           {/* Attachments */}
           <AttachmentsSection issueId={issue.id} canEdit={canEdit} uploadedById={user.id} />
+
+          {/* Issue links */}
+          <IssueLinksPanel issueId={issue.id} canEdit={canEdit} />
 
           {/* Comments */}
           <div className="space-y-3">

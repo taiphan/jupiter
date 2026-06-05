@@ -51,7 +51,7 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | @mentions in comments | `derive/mentions` | ✅ | Notification on mention |
 | Activity / history | Activity log | ✅ | Field changes, comments, links |
 | Attachments | Attachments section | ✅ | Size-validated upload |
-| Issue links | blocks / relates / duplicates | ✅ | Cycle detection on blocks |
+| Issue links | blocks / relates / duplicates | ✅ | v1.15 — full UI: add, view, remove; blocked badge on board cards; cycle detection |
 | Custom fields | Fields tab + per-project defs | ✅ | text, number, select, date, user |
 | Watchers | Issue panel + notifications | ✅ | v1.12 — watch/unwatch, add/remove, notify on activity |
 | In-app notifications (read state) | Bell + activity-derived feed | 🟡 | Feed from `activity`; watchers in v1.12; read state via API (v1.8) |

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.15.0] — 2026-06-05
+
+### Issue links UI (v1.15)
+
+- **Links panel** in issue dialog — view all links grouped by type (Blocks, Is blocked by, Relates to, Clones, Duplicates)
+- **Add link** — live search by key or summary, type picker, cycle detection error messaging
+- **Remove link** — hover ✕ button per row (respects `issues.edit` permission)
+- **Blocked badge** on Kanban board cards — red `Blocked` badge when an issue has an active inbound blocker
+- Persistence via existing workspace sync (`issue_links` table already wired)
+- Activity log on both linked issues (`link-added` / `link-removed` kinds — already in audit filter)
+
 ## [1.14.0] — 2026-06-05
 
 ### List view — spreadsheet mode (v1.14)
