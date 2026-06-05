@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Download } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer,
   LineChart, Line, ReferenceLine, CartesianGrid, Legend,
@@ -25,6 +26,8 @@ import {
   VELOCITY_HINT_NEEDS_MORE_SPRINTS,
   VELOCITY_ROLLING_WINDOW,
 } from './velocity-rolling';
+import { computeVelocityRows } from '@/lib/derive/report-metrics';
+import { downloadCsv, velocityToCsv } from '@/lib/export/csv';
 
 export function ReportsView({ projectKey }: { projectKey: string }) {
   const project = useProjectsStore((s) => s.getProjectByKey(projectKey));
@@ -41,24 +44,7 @@ export function ReportsView({ projectKey }: { projectKey: string }) {
 
   // Velocity: for each completed sprint, compute committed vs completed story points
   const velocity = useMemo(
-    () =>
-      sprintsByProject
-        .filter((s) => s.state === 'completed')
-        .map((s) => {
-          const inSprint = issues.filter((i) => i.sprintId === s.id);
-          const committed = inSprint.reduce((sum, i) => sum + (i.storyPoints ?? 0), 0);
-          const completed = inSprint
-            .filter((i) => i.status === 'done')
-            .reduce((sum, i) => sum + (i.storyPoints ?? 0), 0);
-          return {
-            name: s.name.replace(`${project!.key} `, ''),
-            committed,
-            completed,
-            issues: inSprint.length,
-            done: inSprint.filter((i) => i.status === 'done').length,
-            sprint: s,
-          };
-        }),
+    () => (project ? computeVelocityRows(sprintsByProject, issues, project.key) : []),
     [sprintsByProject, issues, project],
   );
 
@@ -114,6 +100,25 @@ export function ReportsView({ projectKey }: { projectKey: string }) {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="cursor-pointer gap-1.5 text-xs"
+          onClick={() => {
+            if (!project) return;
+            downloadCsv(
+              `${project.key}-velocity`,
+              velocityToCsv(velocity),
+            );
+          }}
+          disabled={velocity.length === 0}
+        >
+          <Download className="h-3.5 w-3.5" aria-hidden="true" />
+          Export velocity CSV
+        </Button>
+      </div>
       {/* Velocity */}
       <Card>
         <CardHeader className="pb-3">

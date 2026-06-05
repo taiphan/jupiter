@@ -36,3 +36,17 @@ export function removeWatcherId(current: string[], userId: string): string[] {
 export function isWatching(issue: { watcherIds: string[] }, userId: string): boolean {
   return issue.watcherIds.includes(userId);
 }
+
+/** Users who should receive issue event emails (excluding the actor). */
+export function issueNotificationRecipientIds(
+  issue: { watcherIds: string[]; assigneeId?: string; reporterId: string },
+  actorId: string,
+): string[] {
+  const ids = new Set<string>();
+  if (issue.reporterId !== actorId) ids.add(issue.reporterId);
+  if (issue.assigneeId && issue.assigneeId !== actorId) ids.add(issue.assigneeId);
+  for (const w of issue.watcherIds) {
+    if (w !== actorId) ids.add(w);
+  }
+  return [...ids];
+}

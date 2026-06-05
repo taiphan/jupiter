@@ -16,11 +16,14 @@ import { IssueDialog } from '@/components/issue/issue-dialog';
 import type { Issue } from '@/lib/types';
 import { STATUS_LABELS } from '@/lib/types';
 import { isWatching } from '@/lib/derive/watchers';
+import { issuesDueSoon, recentChangesForUser } from '@/lib/derive/for-you';
+import { formatDueDate, isOverdue } from '@/lib/derive/due-date';
 import { timeAgo } from '@/lib/utils';
 
 export default function MyWorkPage() {
   const user = useAuthStore((s) => s.user);
   const issues = useIssuesStore((s) => s.issues);
+  const activity = useIssuesStore((s) => s.activity);
   const projects = useProjectsStore((s) => s.projects);
   const members = useProjectsStore((s) => s.members);
 
@@ -55,6 +58,16 @@ export default function MyWorkPage() {
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       .slice(0, 5),
     [issues, user],
+  );
+
+  const dueSoon = useMemo(
+    () => (user ? issuesDueSoon(issues, user.id, 7).slice(0, 6) : []),
+    [issues, user],
+  );
+
+  const whatChanged = useMemo(
+    () => (user ? recentChangesForUser(activity, issues, user.id, 8) : []),
+    [activity, issues, user],
   );
 
   const recentlyUpdated = useMemo(
@@ -116,6 +129,66 @@ export default function MyWorkPage() {
               )}
             </CardContent>
           </Card>
+
+          {dueSoon.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Due soon</CardTitle>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Assigned to you — next 7 days or overdue
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {dueSoon.map((i) => (
+                  <button
+                    key={i.id}
+                    type="button"
+                    onClick={() => setOpenIssueId(i.id)}
+                    className="flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors hover:bg-muted cursor-pointer"
+                  >
+                    <span className="font-mono text-xs text-muted-foreground">{i.key}</span>
+                    <span className="flex-1 truncate text-sm">{i.summary}</span>
+                    <Badge
+                      variant={isOverdue(i) ? 'destructive' : 'outline'}
+                      className="text-[10px]"
+                    >
+                      {formatDueDate(i.dueDate)}
+                    </Badge>
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {whatChanged.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">What changed</CardTitle>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Recent updates on issues you follow
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {whatChanged.map(({ activity: a, issue: i }) => {
+                  const actor = members.find((m) => m.id === a.actorId);
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setOpenIssueId(i.id)}
+                      className="flex w-full flex-col gap-0.5 rounded-md p-2 text-left transition-colors hover:bg-muted cursor-pointer sm:flex-row sm:items-center sm:gap-3"
+                    >
+                      <span className="font-mono text-xs text-muted-foreground shrink-0">{i.key}</span>
+                      <span className="flex-1 truncate text-sm">{a.message}</span>
+                      <span className="text-[11px] text-muted-foreground shrink-0">
+                        {actor?.name.split(' ')[0] ?? 'Someone'} · {timeAgo(a.createdAt)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>

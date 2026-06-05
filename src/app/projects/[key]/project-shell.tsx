@@ -25,6 +25,7 @@ interface ProjectShellProps {
 
 const TABS: Array<{ label: string; sub: string }> = [
   { label: 'Summary', sub: 'summary' },
+  { label: 'Dashboard', sub: 'dashboard' },
   { label: 'Board', sub: '' },
   { label: 'Backlog', sub: 'backlog' },
   { label: 'List', sub: 'list' },
@@ -57,6 +58,7 @@ export function ProjectShell({ projectKey, children }: ProjectShellProps) {
     pathname === baseUrl
       ? ''
       : pathname.startsWith(`${baseUrl}/summary`) ? 'summary'
+      : pathname.startsWith(`${baseUrl}/dashboard`) ? 'dashboard'
       : pathname.startsWith(`${baseUrl}/backlog`) ? 'backlog'
       : pathname.startsWith(`${baseUrl}/list`) ? 'list'
       : pathname.startsWith(`${baseUrl}/calendar`) ? 'calendar'
@@ -96,6 +98,7 @@ export function ProjectShell({ projectKey, children }: ProjectShellProps) {
                     : currentTabSub === 'board-config' ? 'Board configuration'
                     : currentTabSub === 'fields' ? 'Custom fields'
                     : currentTabSub === 'summary' ? 'Summary'
+                    : currentTabSub === 'dashboard' ? 'Dashboard'
                     : currentTabSub === 'backlog' ? 'Backlog'
                     : currentTabSub === 'timeline' ? 'Timeline'
                     : currentTabSub === 'reports' ? 'Reports'

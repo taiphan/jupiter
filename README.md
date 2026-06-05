@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.12-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.13-blue" alt="Version" />
   <img src="https://img.shields.io/badge/Next.js-16-black" alt="Next.js" />
   <img src="https://img.shields.io/badge/TypeScript-5-blue" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind-4-06b6d4" alt="Tailwind" />
@@ -18,9 +18,9 @@
 Jupiter mirrors core **Jira Software** workflows — projects, issues, boards, sprints, and reports — using Next.js 16, Tailwind v4, shadcn/ui, and Zustand persisted state with role-based access.
 
 Full feature mapping vs [Atlassian Jira](https://www.atlassian.com/software/jira/features): see **[REQUIREMENTS.md](./REQUIREMENTS.md)**.  
-**Changelog:** [CHANGELOG.md](./CHANGELOG.md) · **Watchers:** [v1.12](./docs/v1.12-watchers-requirements.md) · **Auth:** [v1.10](./docs/v1.10-auth-security-requirements.md)
+**Changelog:** [CHANGELOG.md](./CHANGELOG.md) · **Dashboards:** [v1.9](./docs/v1.9-dashboards-polish-requirements.md) · **Watchers:** [v1.12](./docs/v1.12-watchers-requirements.md)
 
-## Features (v1.12)
+## Features (v1.13)
 
 ### Plan & track
 - **Projects** — keys, leads, members, settings
@@ -35,7 +35,7 @@ Full feature mapping vs [Atlassian Jira](https://www.atlassian.com/software/jira
 ### Collaborate
 - **Issue detail** — comments, @mentions, activity log, attachments, issue links, **watchers**
 - **Notifications** — in-app bell for mentions, assignments, and **watched issues**
-- **My Work** — assigned, reported, **watching**, and recently updated issues
+- **My Work** — assigned, due soon, what changed, watching, and recently updated
 
 ### Search & configure
 - **Filters** — basic filters + JQL-lite query mode (incl. `dueDate`)
@@ -57,7 +57,7 @@ Full feature mapping vs [Atlassian Jira](https://www.atlassian.com/software/jira
 - **Light / dark theme** — Atlassian-style UI
 
 ### Planned next
-- **v1.9** — dashboards, CSV export, email hooks — see [REQUIREMENTS.md](./REQUIREMENTS.md)
+- **v2.0** — SAML/OIDC/SCIM enterprise identity — see [REQUIREMENTS.md](./REQUIREMENTS.md)
 
 ## Tech Stack
 

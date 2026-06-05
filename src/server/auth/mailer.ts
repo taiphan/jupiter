@@ -103,3 +103,45 @@ export async function sendTestAuthEmail(): Promise<void> {
   const settings = await getAuthSettings();
   await sendAuthEmail(settings.testEmailTo, 'verify_email', 'test-token-not-valid');
 }
+
+export async function sendTransactionalEmail(
+  to: string,
+  subject: string,
+  text: string,
+  html: string,
+): Promise<void> {
+  const settings = await getAuthSettings();
+  let recipient = to;
+  if (settings.mailRedirectTo) {
+    recipient = settings.mailRedirectTo;
+  }
+
+  const transport = await getTransport();
+
+  if (!transport) {
+    const redirectNote =
+      settings.mailRedirectTo && settings.mailRedirectTo !== to
+        ? ` (intended for ${to})`
+        : '';
+    console.log(`[jupiter-mail] ${subject} → ${recipient}${redirectNote}\n  ${text.slice(0, 200)}`);
+    return;
+  }
+
+  try {
+    const originalNote =
+      settings.mailRedirectTo && settings.mailRedirectTo !== to
+        ? `\n\n[Intended recipient: ${to}]`
+        : '';
+
+    await transport.sendMail({
+      from: resolveFromAddress(settings),
+      to: recipient,
+      subject,
+      text: text + originalNote,
+      html: html + (originalNote ? `<p><em>Intended recipient: ${to}</em></p>` : ''),
+    });
+  } catch (err) {
+    console.error('[jupiter-mail] SMTP send failed:', err instanceof Error ? err.message : err);
+    throw new MailDeliveryError();
+  }
+}

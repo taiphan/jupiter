@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.13.0] — 2026-06-04
+
+### Dashboards & polish (v1.9)
+
+- **Project dashboard** — `/projects/{key}/dashboard` with toggleable velocity, burndown, and cumulative flow widgets
+- **My Work** — **Due soon** and **What changed** sections
+- **CSV export** — issues (Filters page) and velocity (Reports page)
+- **Issue email hooks** — `POST /api/notify/issue-event` when `ISSUE_EMAIL_NOTIFICATIONS=true`
+
 ## [1.12.0] — 2026-06-04
 
 ### Issue watchers (v1.12)

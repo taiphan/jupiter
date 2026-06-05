@@ -243,6 +243,7 @@ Atlassian’s 2026 direction ([Rovo in Jira](https://www.atlassian.com/software/
 | **v1.10** | Gmail SMTP verification mail + TOTP 2FA ✅ |
 | **v1.11** | Auth breadth: Microsoft/GitHub OAuth, PAT, session revoke ✅ |
 | **v1.12** | Issue watchers + notification fan-out ✅ |
+| **v1.13** | Dashboards, For You polish, CSV export, issue email hooks ✅ |
 | **v2.0** | Enterprise identity: SAML, OIDC, SCIM, org policy (planned) |
 
 ---
@@ -314,11 +315,16 @@ Issue/project data continues via `/api/workspace` snapshot sync (shipped).
 | **Notifications** | Bell feed for watchers (API + client) |
 | **My Work** | Watching section |
 
-### v1.9 — Dashboards & polish
-- Customizable project dashboards (burndown, velocity, CFD widgets)
-- Enhanced For You page (what changed, what’s due)
-- CSV export for issues and reports
-- Email notification hooks (issue events, not auth)
+### v1.9 — Dashboards & polish ✅
+
+**Spec:** [docs/v1.9-dashboards-polish-requirements.md](./docs/v1.9-dashboards-polish-requirements.md) · **Tasks:** [tasks/v1.9-dashboards-polish-todo.md](./tasks/v1.9-dashboards-polish-todo.md)
+
+| Area | Deliverable |
+|------|-------------|
+| **Dashboard** | Customizable widgets (velocity, burndown, CFD) per project |
+| **For You** | Due soon + what changed on My Work |
+| **CSV** | Export issues + velocity reports |
+| **Email hooks** | Optional issue event mail to watchers/assignee |
 
 ### v2.0 — Scale, collaboration & enterprise identity ⬜
 

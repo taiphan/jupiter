@@ -17,8 +17,10 @@ import { useProjectsStore } from './projects-store';
 import {
   addWatcherIds,
   defaultWatchersForIssue,
+  issueNotificationRecipientIds,
   removeWatcherId,
 } from './derive/watchers';
+import { notifyIssueEventEmail } from './notify-issue-event';
 
 const RANK_STEP = 1000;
 /** Max attachment size kept in localStorage (1.5 MB raw → ~2 MB base64). */
@@ -99,6 +101,31 @@ interface IssuesState {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function queueIssueEmail(issue: Issue, actorId: string, message: string): void {
+  const recipientUserIds = issueNotificationRecipientIds(issue, actorId);
+  if (recipientUserIds.length === 0) return;
+  void notifyIssueEventEmail({
+    issueKey: issue.key,
+    summary: issue.summary,
+    message,
+    recipientUserIds,
+  });
+}
+
+const EMAIL_NOTIFY_KINDS = new Set<ActivityKind>(['status', 'assignee', 'priority', 'comment']);
+
+function maybeEmailForNewActivity(
+  beforeLen: number,
+  activity: ActivityEntry[],
+  issue: Issue,
+  actorId: string,
+): void {
+  if (activity.length <= beforeLen) return;
+  const entry = activity[activity.length - 1];
+  if (!EMAIL_NOTIFY_KINDS.has(entry.kind)) return;
+  queueIssueEmail(issue, actorId, entry.message);
 }
 
 function pushActivity(
@@ -232,6 +259,8 @@ export const useIssuesStore = create<IssuesState>()(
             activity = pushActivity(activity, id, actorId, 'watcher', 'Watchers updated');
           }
 
+          maybeEmailForNewActivity(s.activity.length, activity, after, actorId);
+
           return {
             issues: s.issues.map((i) => (i.id === id ? after : i)),
             activity,
@@ -279,6 +308,8 @@ export const useIssuesStore = create<IssuesState>()(
               `Status: ${STATUS_LABELS[issue.status]} → ${STATUS_LABELS[toStatus]}`);
           }
 
+          maybeEmailForNewActivity(s.activity.length, activity, moved, actorId);
+
           return {
             issues: s.issues.map((i) => (i.id === id ? moved : i)),
             activity,
@@ -297,6 +328,8 @@ export const useIssuesStore = create<IssuesState>()(
           comments: [...s.comments, comment],
           activity: pushActivity(s.activity, issueId, authorId, 'comment', 'Added a comment'),
         }));
+        const issue = get().issues.find((i) => i.id === issueId);
+        if (issue) queueIssueEmail(issue, authorId, 'Added a comment');
         return comment;
       },
 

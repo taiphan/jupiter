@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Plus, Search, Code2, ListFilter, CircleHelp, AlertCircle } from 'lucide-react';
+import { Plus, Search, Code2, ListFilter, CircleHelp, AlertCircle, Download } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,6 +22,7 @@ import { IssueRow } from '@/components/issue/issue-row';
 import { IssueDialog } from '@/components/issue/issue-dialog';
 import { CreateIssueDialog } from '@/components/issue/create-issue-dialog';
 import { parseJql, runJql, validateJql, type JqlContext } from '@/lib/jql';
+import { downloadCsv, issuesToCsv } from '@/lib/export/csv';
 
 function IssuesPageInner() {
   const issues = useIssuesStore((s) => s.issues);
@@ -122,12 +123,31 @@ function IssuesPageInner() {
         title="Filters"
         description="Search across the workspace"
         actions={
-          canCreate ? (
-            <Button size="sm" className="cursor-pointer gap-1.5" onClick={() => setCreateOpen(true)}>
-              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              Create issue
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="cursor-pointer gap-1.5"
+              onClick={() => {
+                const csv = issuesToCsv(filtered, {
+                  members,
+                  projects,
+                  resolveSprintName: (id) =>
+                    sprints.find((s) => s.id === id)?.name ?? '',
+                });
+                downloadCsv(`jupiter-issues-${new Date().toISOString().slice(0, 10)}`, csv);
+              }}
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden="true" />
+              Export CSV
             </Button>
-          ) : null
+            {canCreate ? (
+              <Button size="sm" className="cursor-pointer gap-1.5" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                Create issue
+              </Button>
+            ) : null}
+          </div>
         }
       />
 
