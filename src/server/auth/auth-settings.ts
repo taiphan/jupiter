@@ -105,7 +105,8 @@ function mergeEnvFallback(row: ResolvedAuthSettings): ResolvedAuthSettings {
     githubAuthEnabled,
     smtpUser: row.smtpUser || env.smtpUser,
     emailFrom: row.emailFrom || env.emailFrom,
-    appUrl: row.appUrl || env.appUrl,
+    // Explicit APP_URL (e.g. Vercel production) must win over a DB row seeded with localhost.
+    appUrl: process.env.APP_URL?.trim() || row.appUrl || env.appUrl,
   };
 }
 
