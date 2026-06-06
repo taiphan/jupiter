@@ -10,6 +10,7 @@ import type {
   Member,
   ProjectVersion,
   AutomationRule,
+  ProjectWebhook,
 } from '@/lib/types';
 import type { QuickFilter } from '@/lib/quick-filters-store';
 import type {
@@ -264,6 +265,32 @@ export function automationRuleToInsert(r: AutomationRule) {
     trigger: r.trigger,
     actions: r.actions,
     order: r.order,
+  };
+}
+
+export function mapProjectWebhookRow(
+  row: typeof schema.projectWebhooks.$inferSelect,
+): ProjectWebhook {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    name: row.name,
+    url: row.url,
+    secret: row.secret ?? undefined,
+    events: row.events,
+    enabled: row.enabled,
+  };
+}
+
+export function projectWebhookToInsert(w: ProjectWebhook) {
+  return {
+    id: w.id,
+    projectId: w.projectId,
+    name: w.name,
+    url: w.url,
+    secret: w.secret ?? null,
+    events: w.events,
+    enabled: w.enabled,
   };
 }
 

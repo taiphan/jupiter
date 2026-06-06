@@ -5,6 +5,8 @@ import { SEED_MEMBERS, SEED_PROJECTS } from './seed';
 import { uid } from './utils';
 import { recordWorkspaceEvent } from './record-workspace-event';
 import { useAuthStore } from './auth-store';
+import { getProjectTemplate, type ProjectTemplateId } from './project-templates';
+import { useSprintsStore } from './sprints-store';
 
 interface ProjectsState {
   projects: Project[];
@@ -16,6 +18,8 @@ interface ProjectsState {
     name: string;
     description?: string;
     type?: Project['type'];
+    templateId?: ProjectTemplateId;
+    statusOverrides?: Project['statusOverrides'];
     leadId: string;
     memberIds?: string[];
   }) => Project;
@@ -38,19 +42,32 @@ export const useProjectsStore = create<ProjectsState>()(
       projects: SEED_PROJECTS,
       members: SEED_MEMBERS,
 
-      createProject: ({ key, name, description, type = 'kanban', leadId, memberIds = [] }) => {
+      createProject: ({
+        key, name, description, type, templateId = 'kanban', statusOverrides, leadId, memberIds = [],
+      }) => {
+        const template = getProjectTemplate(templateId);
         const project: Project = {
           id: uid('prj'),
           key: key.toUpperCase(),
           name,
           description,
-          type,
+          type: type ?? template.type,
+          statusOverrides: statusOverrides ?? template.statusOverrides,
           leadId,
           memberIds: Array.from(new Set([leadId, ...memberIds])),
           createdAt: new Date().toISOString(),
           issueCounter: 0,
         };
         set((s) => ({ projects: [...s.projects, project] }));
+
+        if (template.seedSprint) {
+          useSprintsStore.getState().createSprint({
+            projectId: project.id,
+            name: template.seedSprintName ?? 'Sprint 1',
+            goal: 'Initial sprint',
+          });
+        }
+
         const actor = useAuthStore.getState().user;
         recordWorkspaceEvent({
           projectId: project.id,

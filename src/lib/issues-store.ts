@@ -22,6 +22,7 @@ import {
 } from './derive/watchers';
 import { notifyIssueEventEmail } from './notify-issue-event';
 import { runAutomations } from './automation-runner';
+import { dispatchWebhooks } from './webhook-dispatcher';
 
 const RANK_STEP = 1000;
 /** Max attachment size kept in localStorage (1.5 MB raw → ~2 MB base64). */
@@ -35,6 +36,7 @@ export interface IssueFilters {
   assigneeId?: string | 'all' | 'unassigned' | 'me';
   search?: string;
   label?: string | 'all';
+  fixVersionId?: string | 'all' | 'none';
 }
 
 interface IssuesState {
@@ -203,6 +205,7 @@ export const useIssuesStore = create<IssuesState>()(
         }));
 
         runAutomations({ event: 'issue_created', issue, actorId: reporterId });
+        dispatchWebhooks({ event: 'issue_created', issue, actorId: reporterId });
 
         return get().issues.find((i) => i.id === issue.id) ?? issue;
       },
@@ -290,13 +293,59 @@ export const useIssuesStore = create<IssuesState>()(
           };
         });
 
-        if (!options?.skipAutomation && before && after && statusChanged) {
-          runAutomations({
-            event: 'status_changed',
-            issue: after,
-            before,
-            actorId,
-          });
+        if (before && after) {
+          const prev = before;
+          if (!options?.skipAutomation) {
+            if (statusChanged) {
+              runAutomations({
+                event: 'status_changed',
+                issue: after,
+                before: prev,
+                actorId,
+              });
+            }
+            const assigneeChanged =
+              'assigneeId' in patch && patch.assigneeId !== prev.assigneeId;
+            if (assigneeChanged) {
+              runAutomations({
+                event: 'assignee_changed',
+                issue: after,
+                before: prev,
+                actorId,
+              });
+            }
+            const priorityChanged =
+              Boolean(patch.priority && patch.priority !== prev.priority);
+            if (priorityChanged) {
+              runAutomations({
+                event: 'priority_changed',
+                issue: after,
+                before: prev,
+                actorId,
+              });
+            }
+            const addedLabels = patch.labels
+              ? patch.labels.filter((l) => !prev.labels.includes(l))
+              : [];
+            if (addedLabels.length > 0) {
+              runAutomations({
+                event: 'label_added',
+                issue: after,
+                before: prev,
+                actorId,
+                addedLabels,
+              });
+            }
+          }
+          if (statusChanged) {
+            dispatchWebhooks({
+              event: 'issue_status_changed',
+              issue: after,
+              before,
+              actorId,
+            });
+          }
+          dispatchWebhooks({ event: 'issue_updated', issue: after, actorId });
         }
       },
 
@@ -359,6 +408,13 @@ export const useIssuesStore = create<IssuesState>()(
             before: previous,
             actorId,
           });
+          dispatchWebhooks({
+            event: 'issue_status_changed',
+            issue: moved,
+            before: previous,
+            actorId,
+          });
+          dispatchWebhooks({ event: 'issue_updated', issue: moved, actorId });
         }
       },
 
@@ -503,6 +559,12 @@ export function applyFilters(
     }
 
     if (filters.label && filters.label !== 'all' && !i.labels.includes(filters.label)) return false;
+
+    if (filters.fixVersionId && filters.fixVersionId !== 'all') {
+      const ids = i.fixVersionIds ?? [];
+      if (filters.fixVersionId === 'none' && ids.length > 0) return false;
+      if (filters.fixVersionId !== 'none' && !ids.includes(filters.fixVersionId)) return false;
+    }
 
     if (filters.search) {
       const q = filters.search.toLowerCase();

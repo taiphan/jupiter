@@ -1,5 +1,49 @@
 # Changelog
 
+## [1.25.0] — 2026-06-05
+
+### Automation rule expansion (v1.25)
+
+- **New triggers:** assignee changed, priority changed, label added (with optional filters)
+- **New actions:** set priority, remove label
+- Rules run on board, list, dialog, and inline edits
+
+## [1.24.0] — 2026-06-05
+
+### Outbound webhooks (v1.24)
+
+- **Webhooks page** at `/projects/{key}/webhooks` — register HTTPS endpoints per project
+- **Events:** issue created, updated, status changed
+- **Delivery** via `POST /api/webhooks/deliver` (server-side, SSRF-safe URL policy)
+- Optional **HMAC signing** with `X-Jupiter-Signature` header
+- Postgres `project_webhooks` table + workspace sync
+
+## [1.23.0] — 2026-06-05
+
+### Project templates (v1.23)
+
+- **Create project** — choose **Kanban**, **Scrum**, or **Blank** template
+- **Scrum** template shows backlog on the board and seeds **Sprint 1**
+- **Kanban** / **Blank** use the standard continuous-flow column setup
+- Project list shows project type (kanban/scrum)
+
+## [1.22.0] — 2026-06-05
+
+### Global search (v1.22)
+
+- **⌘K search** matches issue description, labels, assignee/reporter names, and fix version names
+- New result sections: **People**, **Labels**, with deep links to Filters
+- **View all in issue navigator** footer; `/issues?q=` and `/issues?label=` URL params
+
+## [1.21.0] — 2026-06-05
+
+### JQL parity & fix-version filters (v1.21)
+
+- **JQL `NOT`** — unary negation, e.g. `NOT status = done`
+- **JQL fields:** `fixVersion` (name or id), `watcher` / `watchers` with `currentUser()`
+- **Basic filters:** fix version dropdown on board, backlog, list (per project)
+- Updated JQL examples on Filters page
+
 ## [1.20.0] — 2026-06-05
 
 ### Automation rules (v1.20)

@@ -18,7 +18,7 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 | Sprints / iterations | Sprints store + sprint board | ✅ | Plan, start, complete; assign issues |
 | Roadmap / timeline | Timeline view | ✅ | v1.17 — Gantt with epic/story/subtask rows, zoom, today line, dependency arrows, startDate field |
 | Capacity / story points | `storyPoints` on issues | ✅ | Used in reports |
-| Project templates | — | ⬜ | Atlassian: pre-built space templates |
+| Project templates | Create project dialog | ✅ | v1.23 — Kanban, Scrum (backlog + Sprint 1), Blank |
 | AI work breakdown (Rovo) | — | ⬜ | Atlassian: break epics into tasks via AI |
 
 ---
@@ -67,8 +67,8 @@ Jupiter is a lightweight Jira-inspired tracker. This document maps **Atlassian J
 |-----------------|---------|--------|-------|
 | Basic filters | Filters page + filter bar | ✅ | type, status, priority, assignee, project |
 | Saved filter shortcuts | Nav → Filters menu | ✅ | Assigned to me, In progress, All |
-| JQL | JQL-lite mode | 🟡 | Subset of JQL; not full parity |
-| Cross-workspace search | Global search (nav) | 🟡 | Issues + projects by text |
+| JQL | JQL-lite mode | 🟡 | v1.21: NOT, fixVersion, watcher; more Jira fields still out of scope |
+| Cross-workspace search | Global search (nav) | ✅ | v1.22 — key, summary, description, labels, people, versions; deep links |
 | Rovo natural-language search | — | ⬜ | Atlassian AI search |
 
 ---
@@ -195,7 +195,10 @@ The **login** (`/login`) and **sign-up** (`/signup`) pages must expose every aut
 | Project settings | Settings tab | ✅ | Name, key, lead, members |
 | Workflow editor (visual) | Board config → transition rules | ✅ | v1.18 — per-role from→to matrix; enforced on board, list, dialog |
 | Fix versions / releases | `/projects/{key}/releases` | ✅ | v1.19 — version CRUD, issue assignment, list column |
-| Automation rules | `/projects/{key}/automation` | ✅ | v1.20 — when/then on create & status change |
+| Automation rules | `/projects/{key}/automation` | ✅ | v1.25 — expanded triggers & actions |
+| JQL NOT / fixVersion / watcher | Filters page JQL mode | ✅ | v1.21 |
+| Global search (enhanced) | Top nav ⌘K | ✅ | v1.22 |
+| Outbound webhooks | `/projects/{key}/webhooks` | ✅ | v1.24 — issue create/update/status; HMAC optional |
 | Audit log | `/audit` | 🟡 | Issue `activity` in Postgres via workspace sync; read via client store — **v1.8:** paginated API + optional workspace events |
 | **Authentication settings (admin)** | Settings → Authentication & email | ✅ | v1.10: SMTP, Google OAuth, 2FA flag, test email |
 | **Delegated permissions / templates** | — | ⬜ | Atlassian Spring 2026 |
@@ -208,10 +211,10 @@ The **login** (`/login`) and **sign-up** (`/signup`) pages must expose every aut
 
 | Jira capability | Jupiter | Status | Notes |
 |-----------------|---------|--------|-------|
-| Automation rules (if X then Y) | Automation tab | ✅ | v1.20 — create/status triggers; set status, assignee, label, comment |
+| Automation rules (if X then Y) | Automation tab | ✅ | v1.25 — assignee/priority/label triggers; set priority, remove label |
 | **AI agents in workflow** | — | ⬜ | Atlassian Spring 2026: assign work to agents |
 | GitHub / Bitbucket / Slack | — | ⬜ | Jira: 3000+ marketplace integrations |
-| Webhooks / REST API | Auth + workspace snapshot API | 🟡 | `/api/workspace` bulk sync; targeted APIs in **v1.8** |
+| Webhooks / REST API | Webhooks tab + deliver API | 🟡 | v1.24 — outbound POST on issue events; full REST CRUD still planned |
 
 ---
 

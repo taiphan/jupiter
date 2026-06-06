@@ -36,6 +36,7 @@ import {
 import { useAuthStore } from '@/lib/auth-store';
 import { useProjectsStore } from '@/lib/projects-store';
 import { useIssuesStore } from '@/lib/issues-store';
+import { useVersionsStore } from '@/lib/versions-store';
 import { ROLE_LABELS, hasPermission } from '@/lib/permissions';
 import { ThemeToggle } from './theme-toggle';
 import { CreateIssueDialog } from '@/components/issue/create-issue-dialog';
@@ -50,6 +51,7 @@ import {
   markNotificationsReadApi,
 } from '@/lib/persistence-api';
 import { initials, timeAgo } from '@/lib/utils';
+import { runGlobalSearch } from '@/lib/derive/global-search';
 
 export function GlobalTopNav() {
   const pathname = usePathname();
@@ -57,7 +59,9 @@ export function GlobalTopNav() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const projects = useProjectsStore((s) => s.projects);
+  const members = useProjectsStore((s) => s.members);
   const issues = useIssuesStore((s) => s.issues);
+  const versions = useVersionsStore((s) => s.versions);
 
   const { notifications, unreadCount } = useNotifications();
   const markAllRead = useNotificationsStore((s) => s.markAllRead);
@@ -104,19 +108,20 @@ export function GlobalTopNav() {
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .slice(0, 5);
 
-  const trimmed = search.trim().toLowerCase();
-  const matchingIssues = trimmed
-    ? issues.filter((i) =>
-        i.summary.toLowerCase().includes(trimmed) ||
-        i.key.toLowerCase().includes(trimmed),
-      ).slice(0, 6)
-    : [];
-  const matchingProjects = trimmed
-    ? projects.filter((p) =>
-        p.name.toLowerCase().includes(trimmed) ||
-        p.key.toLowerCase().includes(trimmed),
-      ).slice(0, 4)
-    : [];
+  const trimmed = search.trim();
+  const searchResults = trimmed
+    ? runGlobalSearch(trimmed, { issues, projects, members, versions })
+    : { issues: [], projects: [], members: [], labels: [], totalIssueMatches: 0 };
+
+  const matchingIssues = searchResults.issues;
+  const matchingProjects = searchResults.projects;
+  const matchingMembers = searchResults.members;
+  const matchingLabels = searchResults.labels;
+  const hasResults =
+    matchingIssues.length > 0 ||
+    matchingProjects.length > 0 ||
+    matchingMembers.length > 0 ||
+    matchingLabels.length > 0;
 
   const isInProjectArea = pathname.startsWith('/projects');
   const isInIssues = pathname.startsWith('/issues');
@@ -315,8 +320,8 @@ export function GlobalTopNav() {
           </kbd>
 
           {searchOpen && trimmed && (
-            <div className="absolute left-0 right-0 top-10 z-50 max-h-[400px] overflow-auto rounded-md border bg-popover ds-shadow-overlay">
-              {matchingIssues.length === 0 && matchingProjects.length === 0 ? (
+            <div className="absolute left-0 right-0 top-10 z-50 max-h-[420px] overflow-auto rounded-md border bg-popover ds-shadow-overlay">
+              {!hasResults ? (
                 <p className="p-4 text-center text-sm text-muted-foreground">
                   No results for &quot;{search}&quot;
                 </p>
@@ -330,6 +335,7 @@ export function GlobalTopNav() {
                       {matchingProjects.map((p) => (
                         <button
                           key={p.id}
+                          type="button"
                           onClick={() => {
                             router.push(`/projects/${p.key}`);
                             setSearch('');
@@ -345,14 +351,66 @@ export function GlobalTopNav() {
                       ))}
                     </div>
                   )}
+                  {matchingMembers.length > 0 && (
+                    <div className="mb-2">
+                      <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        People
+                      </p>
+                      {matchingMembers.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => {
+                            router.push(`/issues?assignee=${m.id}`);
+                            setSearch('');
+                            setSearchOpen(false);
+                          }}
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted cursor-pointer"
+                        >
+                          <UserAvatar member={m} size="sm" />
+                          <span className="font-medium">{m.name}</span>
+                          <span className="text-xs text-muted-foreground">@{m.username}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {matchingLabels.length > 0 && (
+                    <div className="mb-2">
+                      <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Labels
+                      </p>
+                      <div className="flex flex-wrap gap-1 px-2 pb-1">
+                        {matchingLabels.map((label) => (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => {
+                              router.push(`/issues?label=${encodeURIComponent(label)}`);
+                              setSearch('');
+                              setSearchOpen(false);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <Badge variant="secondary" className="text-[10px]">{label}</Badge>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {matchingIssues.length > 0 && (
                     <div>
                       <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                         Issues
+                        {searchResults.totalIssueMatches > matchingIssues.length && (
+                          <span className="ml-1 font-normal normal-case">
+                            ({searchResults.totalIssueMatches} total)
+                          </span>
+                        )}
                       </p>
                       {matchingIssues.map((i) => (
                         <button
                           key={i.id}
+                          type="button"
                           onClick={() => {
                             setOpenIssueId(i.id);
                             setSearch('');
@@ -367,6 +425,20 @@ export function GlobalTopNav() {
                       ))}
                     </div>
                   )}
+                  <div className="border-t mt-2 pt-2 px-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        router.push(`/issues?q=${encodeURIComponent(trimmed)}`);
+                        setSearch('');
+                        setSearchOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs text-primary hover:bg-muted cursor-pointer"
+                    >
+                      View all in issue navigator
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

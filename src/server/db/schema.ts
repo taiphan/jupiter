@@ -222,6 +222,16 @@ export const automationRules = pgTable('automation_rules', {
   order: integer('order').notNull().default(0),
 });
 
+export const projectWebhooks = pgTable('project_webhooks', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  url: text('url').notNull(),
+  secret: text('secret'),
+  events: jsonb('events').$type<import('@/lib/types').WebhookEvent[]>().notNull(),
+  enabled: boolean('enabled').notNull().default(true),
+});
+
 // ─── Issues ─────────────────────────────────────────────────────────────────
 
 export const issues = pgTable(

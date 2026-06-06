@@ -26,5 +26,6 @@ export function buildSeedWorkspaceSnapshot(): WorkspaceSnapshot {
     quickFilters: [],
     versions: SEED_VERSIONS,
     automationRules: SEED_AUTOMATION_RULES,
+    projectWebhooks: [],
   };
 }

@@ -19,6 +19,7 @@ import {
   Star,
   Code2,
   Repeat,
+  Webhook,
   Zap,
   PanelLeftClose,
   PanelLeftOpen,
@@ -68,6 +69,7 @@ export function ProjectSidebar({ project }: ProjectSidebarProps) {
     { label: 'Code', href: '#', icon: Code2 },
     { label: 'Releases', href: `${baseUrl}/releases`, icon: Zap },
     { label: 'Automation', href: `${baseUrl}/automation`, icon: Repeat },
+    { label: 'Webhooks', href: `${baseUrl}/webhooks`, icon: Webhook },
   ];
 
   const settings: NavItem[] = canEdit

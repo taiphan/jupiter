@@ -18,8 +18,11 @@ import { hasPermission } from '@/lib/permissions';
 import {
   AUTOMATION_ACTION_LABELS,
   AUTOMATION_TRIGGER_LABELS,
+  AUTOMATION_UNASSIGNED,
   ISSUE_TYPES,
   ISSUE_TYPE_LABELS,
+  PRIORITIES,
+  PRIORITY_LABELS,
   STATUSES,
   STATUS_LABELS,
 } from '@/lib/types';
@@ -27,9 +30,11 @@ import type {
   AutomationAction,
   AutomationActionType,
   AutomationRule,
+  AutomationTrigger,
   AutomationTriggerType,
   IssueStatus,
   IssueType,
+  Priority,
 } from '@/lib/types';
 
 export function AutomationView({ projectKey }: { projectKey: string }) {
@@ -48,9 +53,15 @@ export function AutomationView({ projectKey }: { projectKey: string }) {
   const [issueType, setIssueType] = useState<IssueType | 'any'>('any');
   const [fromStatus, setFromStatus] = useState<IssueStatus | 'any'>('any');
   const [toStatus, setToStatus] = useState<IssueStatus | 'any'>('done');
+  const [fromAssignee, setFromAssignee] = useState<string>('__any');
+  const [toAssignee, setToAssignee] = useState<string>('__any');
+  const [fromPriority, setFromPriority] = useState<Priority | 'any'>('any');
+  const [toPriority, setToPriority] = useState<Priority | 'any'>('any');
+  const [triggerLabel, setTriggerLabel] = useState('');
   const [actionType, setActionType] = useState<AutomationActionType>('add_comment');
   const [actionStatus, setActionStatus] = useState<IssueStatus>('in-review');
   const [actionAssignee, setActionAssignee] = useState<string>('__none');
+  const [actionPriority, setActionPriority] = useState<Priority>('high');
   const [actionLabel, setActionLabel] = useState('');
   const [actionComment, setActionComment] = useState('Automated follow-up.');
   const [error, setError] = useState('');
@@ -62,21 +73,49 @@ export function AutomationView({ projectKey }: { projectKey: string }) {
 
   if (!project) return null;
 
+  const assigneeFilter = (value: string) =>
+    value === '__any' ? undefined : value === AUTOMATION_UNASSIGNED ? AUTOMATION_UNASSIGNED : value;
+
+  const buildTrigger = (): AutomationTrigger => {
+    switch (triggerType) {
+      case 'issue_created':
+        return {
+          type: 'issue_created',
+          ...(issueType !== 'any' ? { issueType } : {}),
+        };
+      case 'status_changed':
+        return {
+          type: 'status_changed',
+          ...(fromStatus !== 'any' ? { fromStatus } : {}),
+          ...(toStatus !== 'any' ? { toStatus } : {}),
+        };
+      case 'assignee_changed':
+        return {
+          type: 'assignee_changed',
+          ...(fromAssignee !== '__any' ? { fromAssigneeId: assigneeFilter(fromAssignee) } : {}),
+          ...(toAssignee !== '__any' ? { toAssigneeId: assigneeFilter(toAssignee) } : {}),
+        };
+      case 'priority_changed':
+        return {
+          type: 'priority_changed',
+          ...(fromPriority !== 'any' ? { fromPriority } : {}),
+          ...(toPriority !== 'any' ? { toPriority } : {}),
+        };
+      case 'label_added':
+        return {
+          type: 'label_added',
+          ...(triggerLabel.trim() ? { label: triggerLabel.trim().toLowerCase() } : {}),
+        };
+      default:
+        return { type: 'status_changed' };
+    }
+  };
+
   const submit = () => {
     setError('');
     if (!name.trim()) return setError('Rule name is required');
 
-    const trigger =
-      triggerType === 'issue_created'
-        ? {
-            type: 'issue_created' as const,
-            ...(issueType !== 'any' ? { issueType } : {}),
-          }
-        : {
-            type: 'status_changed' as const,
-            ...(fromStatus !== 'any' ? { fromStatus } : {}),
-            ...(toStatus !== 'any' ? { toStatus } : {}),
-          };
+    const trigger = buildTrigger();
 
     let action: AutomationAction;
     switch (actionType) {
@@ -89,9 +128,16 @@ export function AutomationView({ projectKey }: { projectKey: string }) {
           assigneeId: actionAssignee === '__none' ? null : actionAssignee,
         };
         break;
+      case 'set_priority':
+        action = { type: 'set_priority', priority: actionPriority };
+        break;
       case 'add_label':
         if (!actionLabel.trim()) return setError('Label is required for this action');
         action = { type: 'add_label', label: actionLabel.trim().toLowerCase() };
+        break;
+      case 'remove_label':
+        if (!actionLabel.trim()) return setError('Label is required for this action');
+        action = { type: 'remove_label', label: actionLabel.trim().toLowerCase() };
         break;
       case 'add_comment':
         if (!actionComment.trim()) return setError('Comment text is required');
@@ -122,7 +168,7 @@ export function AutomationView({ projectKey }: { projectKey: string }) {
             Automation rules
           </CardTitle>
           <CardDescription>
-            When/then rules for {project.name}. Rules run on issue create and status changes (board, list, dialog).
+            When/then rules for {project.name}. Triggers: create, status, assignee, priority, and label changes.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -196,7 +242,7 @@ export function AutomationView({ projectKey }: { projectKey: string }) {
                     </SelectContent>
                   </Select>
                 </Field>
-              ) : (
+              ) : triggerType === 'status_changed' ? (
                 <>
                   <Field label="From status (optional)">
                     <Select value={fromStatus} onValueChange={(v) => v && setFromStatus(v as IssueStatus | 'any')}>
@@ -225,7 +271,41 @@ export function AutomationView({ projectKey }: { projectKey: string }) {
                     </Select>
                   </Field>
                 </>
-              )}
+              ) : triggerType === 'assignee_changed' ? (
+                <>
+                  <Field label="From assignee (optional)">
+                    <AssigneeSelect
+                      value={fromAssignee}
+                      onChange={setFromAssignee}
+                      members={projectMembers}
+                    />
+                  </Field>
+                  <Field label="To assignee (optional)">
+                    <AssigneeSelect
+                      value={toAssignee}
+                      onChange={setToAssignee}
+                      members={projectMembers}
+                    />
+                  </Field>
+                </>
+              ) : triggerType === 'priority_changed' ? (
+                <>
+                  <Field label="From priority (optional)">
+                    <PrioritySelect value={fromPriority} onChange={setFromPriority} />
+                  </Field>
+                  <Field label="To priority (optional)">
+                    <PrioritySelect value={toPriority} onChange={setToPriority} />
+                  </Field>
+                </>
+              ) : triggerType === 'label_added' ? (
+                <Field label="Label name (optional)">
+                  <Input
+                    value={triggerLabel}
+                    onChange={(e) => setTriggerLabel(e.target.value)}
+                    placeholder="Any label if empty"
+                  />
+                </Field>
+              ) : null}
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -269,7 +349,20 @@ export function AutomationView({ projectKey }: { projectKey: string }) {
                 </Field>
               )}
 
-              {actionType === 'add_label' && (
+              {actionType === 'set_priority' && (
+                <Field label="Priority">
+                  <Select value={actionPriority} onValueChange={(v) => v && setActionPriority(v as Priority)}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PRIORITIES.map((p) => (
+                        <SelectItem key={p} value={p} className="text-xs">{PRIORITY_LABELS[p]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
+
+              {(actionType === 'add_label' || actionType === 'remove_label') && (
                 <Field label="Label">
                   <Input value={actionLabel} onChange={(e) => setActionLabel(e.target.value)} placeholder="e.g. triage" />
                 </Field>
@@ -350,9 +443,35 @@ function describeTrigger(rule: AutomationRule): string {
   if (t.type === 'issue_created') {
     return t.issueType ? `${ISSUE_TYPE_LABELS[t.issueType]} is created` : 'issue is created';
   }
-  const from = t.fromStatus ? STATUS_LABELS[t.fromStatus] : 'any status';
-  const to = t.toStatus ? STATUS_LABELS[t.toStatus] : 'any status';
-  return `status moves from ${from} to ${to}`;
+  if (t.type === 'status_changed') {
+    const from = t.fromStatus ? STATUS_LABELS[t.fromStatus] : 'any status';
+    const to = t.toStatus ? STATUS_LABELS[t.toStatus] : 'any status';
+    return `status moves from ${from} to ${to}`;
+  }
+  if (t.type === 'assignee_changed') {
+    const from =
+      t.fromAssigneeId === AUTOMATION_UNASSIGNED
+        ? 'unassigned'
+        : t.fromAssigneeId
+          ? 'member'
+          : 'any assignee';
+    const to =
+      t.toAssigneeId === AUTOMATION_UNASSIGNED
+        ? 'unassigned'
+        : t.toAssigneeId
+          ? 'member'
+          : 'any assignee';
+    return `assignee changes from ${from} to ${to}`;
+  }
+  if (t.type === 'priority_changed') {
+    const from = t.fromPriority ? PRIORITY_LABELS[t.fromPriority] : 'any priority';
+    const to = t.toPriority ? PRIORITY_LABELS[t.toPriority] : 'any priority';
+    return `priority moves from ${from} to ${to}`;
+  }
+  if (t.type === 'label_added') {
+    return t.label ? `label "${t.label}" is added` : 'any label is added';
+  }
+  return 'unknown trigger';
 }
 
 function describeAction(
@@ -367,13 +486,64 @@ function describeAction(
       const m = members.find((x) => x.id === action.assigneeId);
       return `assign to ${m?.name ?? 'member'}`;
     }
+    case 'set_priority':
+      return action.priority ? `set priority to ${PRIORITY_LABELS[action.priority]}` : 'set priority';
     case 'add_label':
       return action.label ? `add label "${action.label}"` : 'add label';
+    case 'remove_label':
+      return action.label ? `remove label "${action.label}"` : 'remove label';
     case 'add_comment':
       return 'add comment';
     default:
       return 'run action';
   }
+}
+
+function AssigneeSelect({
+  value,
+  onChange,
+  members,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  members: { id: string; name: string }[];
+}) {
+  return (
+    <Select value={value} onValueChange={(v) => v && onChange(v)}>
+      <SelectTrigger className="h-9 text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__any" className="text-xs">Any</SelectItem>
+        <SelectItem value={AUTOMATION_UNASSIGNED} className="text-xs">Unassigned</SelectItem>
+        {members.map((m) => (
+          <SelectItem key={m.id} value={m.id} className="text-xs">{m.name}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function PrioritySelect({
+  value,
+  onChange,
+}: {
+  value: Priority | 'any';
+  onChange: (v: Priority | 'any') => void;
+}) {
+  return (
+    <Select value={value} onValueChange={(v) => v && onChange(v as Priority | 'any')}>
+      <SelectTrigger className="h-9 text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="any" className="text-xs">Any</SelectItem>
+        {PRIORITIES.map((p) => (
+          <SelectItem key={p} value={p} className="text-xs">{PRIORITY_LABELS[p]}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

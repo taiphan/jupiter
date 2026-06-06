@@ -79,7 +79,13 @@ function IssuesPageInner() {
       const lower = token.toLowerCase();
       return sprints.find((s) => s.name.toLowerCase() === lower || s.id === token)?.id;
     },
-  }), [user?.id, members, projects, sprints]);
+    resolveVersion: (token) => {
+      const lower = token.toLowerCase();
+      return versions.find(
+        (v) => v.name.toLowerCase() === lower || v.id === token,
+      )?.id;
+    },
+  }), [user?.id, members, projects, sprints, versions]);
 
   const filtered = useMemo(() => {
     if (mode === 'jql' && appliedJql) {
@@ -114,9 +120,9 @@ function IssuesPageInner() {
   };
 
   const EXAMPLES = [
-    'assignee = currentUser() AND status != Done',
-    'type = bug AND priority IN (high, highest)',
-    'status = in-progress ORDER BY priority DESC',
+    'assignee = currentUser() AND NOT status = done',
+    'type = bug AND fixVersion IN ("1.1.0", "1.0.0")',
+    'watcher = currentUser() ORDER BY updated DESC',
   ];
 
   return (
@@ -347,9 +353,13 @@ function parseFiltersFromParams(params: URLSearchParams): IssueFilters {
   const projectParam = params.get('project') ?? undefined;
   const assignee = params.get('assignee') as IssueFilters['assigneeId'] | null;
   const status = params.get('status') as IssueFilters['status'] | null;
+  const label = params.get('label');
+  const q = params.get('q') ?? params.get('search');
   return {
     projectId: projectParam,
     assigneeId: assignee ?? undefined,
     status: status ?? undefined,
+    label: label ?? undefined,
+    search: q ?? undefined,
   };
 }

@@ -17,6 +17,8 @@ import {
   versionToInsert,
   mapAutomationRuleRow,
   automationRuleToInsert,
+  mapProjectWebhookRow,
+  projectWebhookToInsert,
   projectToInsert,
   issueToInsert,
   sprintToInsert,
@@ -40,6 +42,7 @@ export async function loadWorkspace(): Promise<WorkspaceSnapshot> {
     quickFilterRows,
     versionRows,
     automationRows,
+    webhookRows,
   ] = await Promise.all([
     db.select().from(schema.users),
     db.select().from(schema.projects),
@@ -54,6 +57,7 @@ export async function loadWorkspace(): Promise<WorkspaceSnapshot> {
     db.select().from(schema.quickFilters),
     db.select().from(schema.projectVersions),
     db.select().from(schema.automationRules),
+    db.select().from(schema.projectWebhooks),
   ]);
 
   const membersByProject = new Map<string, string[]>();
@@ -78,6 +82,7 @@ export async function loadWorkspace(): Promise<WorkspaceSnapshot> {
     quickFilters: quickFilterRows.map(mapQuickFilterRow),
     versions: versionRows.map(mapVersionRow),
     automationRules: automationRows.map(mapAutomationRuleRow),
+    projectWebhooks: webhookRows.map(mapProjectWebhookRow),
   };
 }
 
@@ -312,6 +317,22 @@ export async function saveWorkspace(snapshot: WorkspaceSnapshot): Promise<void> 
         });
     }
 
+    for (const w of snapshot.projectWebhooks ?? []) {
+      await tx
+        .insert(schema.projectWebhooks)
+        .values(projectWebhookToInsert(w))
+        .onConflictDoUpdate({
+          target: schema.projectWebhooks.id,
+          set: {
+            name: w.name,
+            url: w.url,
+            secret: w.secret ?? null,
+            events: w.events,
+            enabled: w.enabled,
+          },
+        });
+    }
+
     // Remove rows deleted on the client (scoped to known project/issue ids)
     const snapshotCommentIds = new Set(snapshot.comments.map((c) => c.id));
     const snapshotLinkIds = new Set(snapshot.issueLinks.map((l) => l.id));
@@ -319,6 +340,7 @@ export async function saveWorkspace(snapshot: WorkspaceSnapshot): Promise<void> 
     const snapshotQuickIds = new Set(snapshot.quickFilters.map((q) => q.id));
     const snapshotVersionIds = new Set((snapshot.versions ?? []).map((v) => v.id));
     const snapshotAutomationIds = new Set((snapshot.automationRules ?? []).map((r) => r.id));
+    const snapshotWebhookIds = new Set((snapshot.projectWebhooks ?? []).map((w) => w.id));
     const snapshotSprintIds = new Set(snapshot.sprints.map((s) => s.id));
 
     if (issueIds.length > 0) {
@@ -388,6 +410,17 @@ export async function saveWorkspace(snapshot: WorkspaceSnapshot): Promise<void> 
         .map((r) => r.id);
       if (toDeleteAutomation.length > 0) {
         await tx.delete(schema.automationRules).where(inArray(schema.automationRules.id, toDeleteAutomation));
+      }
+
+      const existingWebhooks = await tx
+        .select({ id: schema.projectWebhooks.id })
+        .from(schema.projectWebhooks)
+        .where(inArray(schema.projectWebhooks.projectId, projectIds));
+      const toDeleteWebhooks = existingWebhooks
+        .filter((r) => !snapshotWebhookIds.has(r.id))
+        .map((r) => r.id);
+      if (toDeleteWebhooks.length > 0) {
+        await tx.delete(schema.projectWebhooks).where(inArray(schema.projectWebhooks.id, toDeleteWebhooks));
       }
 
       const existingSprints = await tx

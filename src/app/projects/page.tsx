@@ -19,6 +19,8 @@ import { useIssuesStore } from '@/lib/issues-store';
 import { useAuthStore } from '@/lib/auth-store';
 import { hasPermission } from '@/lib/permissions';
 import { UserAvatar } from '@/components/issue/user-avatar';
+import { PROJECT_TEMPLATES, type ProjectTemplateId } from '@/lib/project-templates';
+import { cn } from '@/lib/utils';
 
 export default function ProjectsPage() {
   const projects = useProjectsStore((s) => s.projects);
@@ -34,6 +36,7 @@ export default function ProjectsPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [leadId, setLeadId] = useState(user?.id ?? '');
+  const [templateId, setTemplateId] = useState<ProjectTemplateId>('kanban');
   const [error, setError] = useState('');
 
   const submitCreate = () => {
@@ -52,12 +55,14 @@ export default function ProjectsPage() {
       name: name.trim(),
       description: description.trim() || undefined,
       leadId,
+      templateId,
     });
     setOpen(false);
     setKey('');
     setName('');
     setDescription('');
     setLeadId(user?.id ?? '');
+    setTemplateId('kanban');
   };
 
   return (
@@ -114,6 +119,7 @@ export default function ProjectsPage() {
                         <p className="truncate text-sm font-medium text-primary">{p.name}</p>
                         <p className="truncate text-[11px] text-muted-foreground">
                           {p.description ?? 'No description'}
+                          <span className="ml-1 capitalize">· {p.type}</span>
                         </p>
                       </div>
                     </div>
@@ -152,6 +158,26 @@ export default function ProjectsPage() {
                   {error}
                 </div>
               )}
+              <Field label="Template">
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {PROJECT_TEMPLATES.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setTemplateId(t.id)}
+                      className={cn(
+                        'rounded-md border p-3 text-left transition-colors cursor-pointer',
+                        templateId === t.id
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                          : 'hover:bg-muted/50',
+                      )}
+                    >
+                      <p className="text-sm font-medium">{t.name}</p>
+                      <p className="mt-1 text-[11px] text-muted-foreground leading-snug">{t.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </Field>
               <Field label="Name">
                 <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Marketing Website" autoFocus />
               </Field>

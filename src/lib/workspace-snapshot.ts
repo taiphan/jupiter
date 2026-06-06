@@ -7,6 +7,7 @@ import { useCustomFieldsStore } from '@/lib/custom-fields-store';
 import { useQuickFiltersStore } from '@/lib/quick-filters-store';
 import { useVersionsStore } from '@/lib/versions-store';
 import { useAutomationStore } from '@/lib/automation-store';
+import { useWebhooksStore } from '@/lib/webhooks-store';
 
 export function collectWorkspaceSnapshot(): WorkspaceSnapshot {
   const projects = useProjectsStore.getState();
@@ -17,6 +18,7 @@ export function collectWorkspaceSnapshot(): WorkspaceSnapshot {
   const quick = useQuickFiltersStore.getState();
   const versions = useVersionsStore.getState();
   const automation = useAutomationStore.getState();
+  const webhooks = useWebhooksStore.getState();
 
   return {
     projects: projects.projects,
@@ -31,6 +33,7 @@ export function collectWorkspaceSnapshot(): WorkspaceSnapshot {
     quickFilters: quick.custom,
     versions: versions.versions,
     automationRules: automation.rules,
+    projectWebhooks: webhooks.webhooks,
   };
 }
 
@@ -51,4 +54,5 @@ export function applyWorkspaceSnapshot(snapshot: WorkspaceSnapshot): void {
   useQuickFiltersStore.setState({ custom: snapshot.quickFilters });
   useVersionsStore.setState({ versions: snapshot.versions ?? [] });
   useAutomationStore.setState({ rules: snapshot.automationRules ?? [] });
+  useWebhooksStore.setState({ webhooks: snapshot.projectWebhooks ?? [] });
 }

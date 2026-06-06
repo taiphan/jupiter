@@ -16,19 +16,25 @@ import {
 } from '@/lib/types';
 import type { IssueFilters } from '@/lib/issues-store';
 import { useProjectsStore } from '@/lib/projects-store';
+import { useVersionsStore } from '@/lib/versions-store';
 
 interface IssueFiltersBarProps {
   filters: IssueFilters;
   onChange: (next: IssueFilters) => void;
   showStatus?: boolean;
   showProject?: boolean;
+  /** When set, show fix-version filter scoped to this project */
+  projectId?: string;
 }
 
 export function IssueFiltersBar({
-  filters, onChange, showStatus = true, showProject = false,
+  filters, onChange, showStatus = true, showProject = false, projectId,
 }: IssueFiltersBarProps) {
   const projects = useProjectsStore((s) => s.projects);
   const members = useProjectsStore((s) => s.members);
+  const versions = useVersionsStore((s) =>
+    projectId ? s.getVersionsForProject(projectId) : [],
+  );
 
   const set = <K extends keyof IssueFilters>(key: K, value: IssueFilters[K]) =>
     onChange({ ...filters, [key]: value });
@@ -129,6 +135,24 @@ export function IssueFiltersBar({
           ))}
         </SelectContent>
       </Select>
+
+      {projectId && versions.length > 0 && (
+        <Select
+          value={filters.fixVersionId ?? 'all'}
+          onValueChange={(v) => v && set('fixVersionId', v as IssueFilters['fixVersionId'])}
+        >
+          <SelectTrigger className="w-[150px]" aria-label="Fix version">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All versions</SelectItem>
+            <SelectItem value="none">No version</SelectItem>
+            {versions.map((ver) => (
+              <SelectItem key={ver.id} value={ver.id}>{ver.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 }

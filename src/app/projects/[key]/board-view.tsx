@@ -98,7 +98,7 @@ export function BoardView({ projectKey }: { projectKey: string }) {
         )}
 
         <div className="flex-1 min-w-[220px]">
-          <IssueFiltersBar filters={filters} onChange={handleFiltersChange} showStatus={false} />
+          <IssueFiltersBar filters={filters} onChange={handleFiltersChange} showStatus={false} projectId={project.id} />
         </div>
       </div>
 

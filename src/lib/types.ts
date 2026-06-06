@@ -165,7 +165,15 @@ export interface ProjectVersion {
 
 // ─── Automation rules ───────────────────────────────────────────────────────
 
-export type AutomationTriggerType = 'issue_created' | 'status_changed';
+export type AutomationTriggerType =
+  | 'issue_created'
+  | 'status_changed'
+  | 'assignee_changed'
+  | 'priority_changed'
+  | 'label_added';
+
+/** Sentinel for “unassigned” in automation trigger filters */
+export const AUTOMATION_UNASSIGNED = '__unassigned__';
 
 export interface AutomationTrigger {
   type: AutomationTriggerType;
@@ -175,14 +183,29 @@ export interface AutomationTrigger {
   fromStatus?: IssueStatus;
   /** For status_changed — optional target status */
   toStatus?: IssueStatus;
+  /** For assignee_changed — member id or AUTOMATION_UNASSIGNED */
+  fromAssigneeId?: string;
+  toAssigneeId?: string;
+  /** For priority_changed */
+  fromPriority?: Priority;
+  toPriority?: Priority;
+  /** For label_added — optional label name filter */
+  label?: string;
 }
 
-export type AutomationActionType = 'set_status' | 'set_assignee' | 'add_label' | 'add_comment';
+export type AutomationActionType =
+  | 'set_status'
+  | 'set_assignee'
+  | 'set_priority'
+  | 'add_label'
+  | 'remove_label'
+  | 'add_comment';
 
 export interface AutomationAction {
   type: AutomationActionType;
   status?: IssueStatus;
   assigneeId?: string | null;
+  priority?: Priority;
   label?: string;
   commentBody?: string;
 }
@@ -201,13 +224,39 @@ export interface AutomationRule {
 export const AUTOMATION_TRIGGER_LABELS: Record<AutomationTriggerType, string> = {
   issue_created: 'Issue created',
   status_changed: 'Status changed',
+  assignee_changed: 'Assignee changed',
+  priority_changed: 'Priority changed',
+  label_added: 'Label added',
 };
 
 export const AUTOMATION_ACTION_LABELS: Record<AutomationActionType, string> = {
   set_status: 'Set status',
   set_assignee: 'Set assignee',
+  set_priority: 'Set priority',
   add_label: 'Add label',
+  remove_label: 'Remove label',
   add_comment: 'Add comment',
+};
+
+// ─── Outbound webhooks ──────────────────────────────────────────────────────
+
+export type WebhookEvent = 'issue_created' | 'issue_updated' | 'issue_status_changed';
+
+export interface ProjectWebhook {
+  id: string;
+  projectId: string;
+  name: string;
+  url: string;
+  /** Optional HMAC secret — sent as X-Jupiter-Signature (sha256=…) */
+  secret?: string;
+  events: WebhookEvent[];
+  enabled: boolean;
+}
+
+export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
+  issue_created: 'Issue created',
+  issue_updated: 'Issue updated',
+  issue_status_changed: 'Status changed',
 };
 
 // ─── Attachments ────────────────────────────────────────────────────────────

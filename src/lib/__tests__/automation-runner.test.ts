@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AutomationRule, Issue } from '../types';
+import { AUTOMATION_UNASSIGNED } from '../types';
 import { matchingRules } from '../automation-runner';
 
 const baseIssue = {
@@ -47,6 +48,24 @@ const rules: AutomationRule[] = [
     actions: [],
     order: 2,
   },
+  {
+    id: 'r4',
+    projectId: 'prj_web',
+    name: 'Assign to lead',
+    enabled: true,
+    trigger: { type: 'assignee_changed', fromAssigneeId: AUTOMATION_UNASSIGNED, toAssigneeId: 'usr_lead' },
+    actions: [{ type: 'set_priority', priority: 'high' }],
+    order: 3,
+  },
+  {
+    id: 'r5',
+    projectId: 'prj_web',
+    name: 'Triage label',
+    enabled: true,
+    trigger: { type: 'label_added', label: 'triage' },
+    actions: [{ type: 'add_comment', commentBody: 'Triaged' }],
+    order: 4,
+  },
 ];
 
 describe('matchingRules', () => {
@@ -79,6 +98,44 @@ describe('matchingRules', () => {
       issue: after,
       before,
       actorId: 'usr_admin',
+    });
+    expect(matched).toHaveLength(0);
+  });
+
+  it('matches assignee_changed from unassigned to member', () => {
+    const before = { ...baseIssue, assigneeId: undefined };
+    const after = { ...baseIssue, assigneeId: 'usr_lead' };
+    const matched = matchingRules(rules, {
+      event: 'assignee_changed',
+      issue: after,
+      before,
+      actorId: 'usr_admin',
+    });
+    expect(matched.map((r) => r.id)).toEqual(['r4']);
+  });
+
+  it('matches label_added when specific label is added', () => {
+    const before = { ...baseIssue, labels: [] };
+    const after = { ...baseIssue, labels: ['triage'] };
+    const matched = matchingRules(rules, {
+      event: 'label_added',
+      issue: after,
+      before,
+      actorId: 'usr_admin',
+      addedLabels: ['triage'],
+    });
+    expect(matched.map((r) => r.id)).toEqual(['r5']);
+  });
+
+  it('skips label rule when a different label is added', () => {
+    const before = { ...baseIssue, labels: [] };
+    const after = { ...baseIssue, labels: ['bug'] };
+    const matched = matchingRules(rules, {
+      event: 'label_added',
+      issue: after,
+      before,
+      actorId: 'usr_admin',
+      addedLabels: ['bug'],
     });
     expect(matched).toHaveLength(0);
   });

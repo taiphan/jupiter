@@ -85,7 +85,7 @@ export function ListView({ projectKey }: { projectKey: string }) {
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <IssueFiltersBar filters={filters} onChange={handleFiltersChange} showStatus />
+        <IssueFiltersBar filters={filters} onChange={handleFiltersChange} showStatus projectId={project.id} />
         <Select value={sprintFilter} onValueChange={(v) => v && setSprintFilter(v)}>
           <SelectTrigger className="w-[180px]" aria-label="Sprint">
             <SelectValue />

@@ -4,13 +4,14 @@
  * Supported grammar (case-insensitive keywords):
  *   query      := expr (ORDER BY field [ASC|DESC])?
  *   expr       := term (("AND" | "OR") term)*
- *   term       := "(" expr ")" | clause
+ *   term       := "NOT" term | "(" expr ")" | clause
  *   clause     := field op value
  *   op         := "=" | "!=" | "~" | "!~" | ">" | ">=" | "<" | "<=" | "IN" | "NOT IN"
  *   value      := bareword | "quoted" | (a, b, c)
  *
  * Fields: project, type, status, priority, assignee, reporter, label,
- *         summary, sprint, storypoints, created, updated, key, duedate
+ *         summary, sprint, storypoints, created, updated, key, duedate,
+ *         fixVersion, watcher
  *
  * Functions: currentUser(), unassigned, EMPTY
  */
@@ -23,6 +24,8 @@ export interface JqlContext {
   resolveUser: (token: string) => string | undefined;
   resolveProject: (token: string) => string | undefined;
   resolveSprint: (token: string) => string | undefined;
+  /** Resolve fix version name to id, e.g. fixVersion = "1.1.0". */
+  resolveVersion?: (token: string) => string | undefined;
 }
 
 type Op = '=' | '!=' | '~' | '!~' | '>' | '>=' | '<' | '<=' | 'in' | 'not in';
@@ -38,7 +41,11 @@ interface BinaryNode {
   left: Node;
   right: Node;
 }
-type Node = Clause | BinaryNode;
+interface NotNode {
+  kind: 'not';
+  child: Node;
+}
+type Node = Clause | BinaryNode | NotNode;
 
 export interface ParsedQuery {
   where?: Node;
@@ -84,14 +91,12 @@ function tokenize(input: string): Token[] {
       i = j + 1;
       continue;
     }
-    // operators
     const matched = ops.find((op) => input.startsWith(op, i));
     if (matched) {
       tokens.push({ t: 'op', v: matched });
       i += matched.length;
       continue;
     }
-    // bareword (until whitespace, paren, comma, or operator char)
     let j = i;
     let word = '';
     while (
@@ -103,7 +108,6 @@ function tokenize(input: string): Token[] {
       j++;
     }
     if (word.length === 0) throw new JqlError(`Unexpected character: ${ch}`);
-    // Treat a function call suffix "()" as part of the word, e.g. currentUser()
     if (input.startsWith('()', j)) {
       word += '()';
       j += 2;
@@ -120,7 +124,6 @@ export function parseJql(input: string): ParsedQuery {
   const trimmed = input.trim();
   if (!trimmed) return {};
 
-  // Split off ORDER BY
   const orderMatch = /\border\s+by\b/i.exec(trimmed);
   let whereStr = trimmed;
   let orderBy: ParsedQuery['orderBy'];
@@ -128,7 +131,7 @@ export function parseJql(input: string): ParsedQuery {
     whereStr = trimmed.slice(0, orderMatch.index).trim();
     const orderStr = trimmed.slice(orderMatch.index + orderMatch[0].length).trim();
     const parts = orderStr.split(/\s+/);
-    const field = parts[0]?.toLowerCase();
+    const field = normalizeField(parts[0] ?? '');
     const dir = (parts[1]?.toLowerCase() === 'desc' ? 'desc' : 'asc') as 'asc' | 'desc';
     if (field) orderBy = { field, dir };
   }
@@ -142,6 +145,13 @@ export function parseJql(input: string): ParsedQuery {
   }
 
   return { where, orderBy };
+}
+
+function normalizeField(raw: string): string {
+  const f = raw.toLowerCase().replace(/-/g, '');
+  if (f === 'fixversion' || f === 'fixversions') return 'fixversion';
+  if (f === 'watchers') return 'watcher';
+  return f;
 }
 
 class Parser {
@@ -175,6 +185,10 @@ class Parser {
 
   private parseTerm(): Node {
     const tk = this.peek();
+    if (tk?.t === 'word' && tk.v.toLowerCase() === 'not') {
+      this.next();
+      return { kind: 'not', child: this.parseTerm() };
+    }
     if (tk?.t === 'lparen') {
       this.next();
       const expr = this.parseExpr();
@@ -188,7 +202,7 @@ class Parser {
   private parseClause(): Clause {
     const fieldTk = this.next();
     if (fieldTk?.t !== 'word') throw new JqlError('Expected a field name');
-    const field = fieldTk.v.toLowerCase();
+    const field = normalizeField(fieldTk.v);
 
     const opTk = this.next();
     let op: Op;
@@ -204,7 +218,6 @@ class Parser {
       throw new JqlError(`Expected operator after "${field}"`);
     }
 
-    // Values
     const values: string[] = [];
     if (op === 'in' || op === 'not in') {
       const open = this.next();
@@ -220,7 +233,7 @@ class Parser {
     } else {
       const v = this.next();
       if (v?.t === 'word' || v?.t === 'string') values.push(v.v);
-      else throw new JqlError(`Expected a value after operator`);
+      else throw new JqlError('Expected a value after operator');
     }
 
     return { kind: 'clause', field, op, values };
@@ -232,7 +245,7 @@ class Parser {
 function resolveValueToken(field: string, token: string, ctx: JqlContext): string | undefined {
   const lower = token.toLowerCase();
   if (lower === 'currentuser()' || lower === 'currentuser') return ctx.currentUserId;
-  if ((field === 'assignee' || field === 'reporter')) {
+  if (field === 'assignee' || field === 'reporter' || field === 'watcher') {
     if (lower === 'unassigned' || lower === 'empty' || lower === 'null') return '__none';
     return ctx.resolveUser(token) ?? token;
   }
@@ -240,6 +253,10 @@ function resolveValueToken(field: string, token: string, ctx: JqlContext): strin
   if (field === 'sprint') {
     if (lower === 'empty' || lower === 'none') return '__none';
     return ctx.resolveSprint(token) ?? token;
+  }
+  if (field === 'fixversion') {
+    if (lower === 'empty' || lower === 'none') return '__none';
+    return ctx.resolveVersion?.(token) ?? token;
   }
   return token;
 }
@@ -261,12 +278,13 @@ function fieldValue(issue: Issue, field: string): string | number | undefined | 
     case 'created': return issue.createdAt;
     case 'updated': return issue.updatedAt;
     case 'label': return issue.labels.join(',');
+    case 'fixversion': return (issue.fixVersionIds ?? []).join(',');
+    case 'watcher': return (issue.watcherIds ?? []).join(',');
     default: return undefined;
   }
 }
 
 function compare(a: string | number, op: Op, b: string): boolean {
-  // Numeric comparison when both look numeric
   const an = typeof a === 'number' ? a : Number(a);
   const bn = Number(b);
   const numeric = !Number.isNaN(an) && !Number.isNaN(bn);
@@ -284,22 +302,52 @@ function compare(a: string | number, op: Op, b: string): boolean {
   }
 }
 
+function evalMultiValueSet(
+  ids: string[],
+  clause: Clause,
+  resolved: string[],
+): boolean {
+  if (clause.op === 'in') return resolved.some((v) => ids.includes(v));
+  if (clause.op === 'not in') return !resolved.some((v) => ids.includes(v));
+  if (clause.op === '=') return ids.includes(resolved[0]);
+  if (clause.op === '!=') return !ids.includes(resolved[0]);
+  if (clause.op === '~') return ids.some((id) => id.toLowerCase().includes(resolved[0].toLowerCase()));
+  return false;
+}
+
 function evalClause(issue: Issue, clause: Clause, ctx: JqlContext): boolean {
-  const raw = fieldValue(issue, clause.field);
-  if (raw === undefined) throw new JqlError(`Unknown field: ${clause.field}`);
+  const field = clause.field;
 
-  const resolved = clause.values.map((v) => resolveValueToken(clause.field, v, ctx) ?? v);
-
-  if (clause.field === 'label') {
-    // label matching against the set
+  if (field === 'label') {
     const labels = issue.labels.map((l) => l.toLowerCase());
-    if (clause.op === 'in') return resolved.some((v) => labels.includes(v.toLowerCase()));
-    if (clause.op === 'not in') return !resolved.some((v) => labels.includes(v.toLowerCase()));
-    if (clause.op === '=') return labels.includes(resolved[0].toLowerCase());
-    if (clause.op === '!=') return !labels.includes(resolved[0].toLowerCase());
-    if (clause.op === '~') return labels.some((l) => l.includes(resolved[0].toLowerCase()));
+    const resolved = clause.values.map((v) => v.toLowerCase());
+    if (clause.op === 'in') return resolved.some((v) => labels.includes(v));
+    if (clause.op === 'not in') return !resolved.some((v) => labels.includes(v));
+    if (clause.op === '=') return labels.includes(resolved[0]);
+    if (clause.op === '!=') return !labels.includes(resolved[0]);
+    if (clause.op === '~') return labels.some((l) => l.includes(resolved[0]));
     return false;
   }
+
+  if (field === 'fixversion') {
+    const ids = issue.fixVersionIds ?? [];
+    const resolved = clause.values.map((v) => resolveValueToken(field, v, ctx) ?? v);
+    if (resolved[0] === '__none' && clause.op === '=') return ids.length === 0;
+    if (resolved[0] === '__none' && clause.op === '!=') return ids.length > 0;
+    return evalMultiValueSet(ids, clause, resolved);
+  }
+
+  if (field === 'watcher') {
+    const ids = issue.watcherIds ?? [];
+    const resolved = clause.values.map((v) => resolveValueToken(field, v, ctx) ?? v);
+    if (resolved[0] === '__none' && clause.op === '=') return ids.length === 0;
+    return evalMultiValueSet(ids, clause, resolved);
+  }
+
+  const raw = fieldValue(issue, field);
+  if (raw === undefined) throw new JqlError(`Unknown field: ${field}`);
+
+  const resolved = clause.values.map((v) => resolveValueToken(field, v, ctx) ?? v);
 
   if (clause.op === 'in') return resolved.some((v) => compare(raw as string | number, '=', v));
   if (clause.op === 'not in') return !resolved.some((v) => compare(raw as string | number, '=', v));
@@ -308,6 +356,7 @@ function evalClause(issue: Issue, clause: Clause, ctx: JqlContext): boolean {
 
 function evalNode(issue: Issue, node: Node, ctx: JqlContext): boolean {
   if (node.kind === 'clause') return evalClause(issue, node, ctx);
+  if (node.kind === 'not') return !evalNode(issue, node.child, ctx);
   if (node.kind === 'and') return evalNode(issue, node.left, ctx) && evalNode(issue, node.right, ctx);
   return evalNode(issue, node.left, ctx) || evalNode(issue, node.right, ctx);
 }

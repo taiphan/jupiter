@@ -1,4 +1,4 @@
-import type { Project, Issue, Comment, ActivityEntry, Attachment, Sprint, IssueLink, CustomFieldDef, ProjectVersion, AutomationRule } from './types';
+import type { Project, Issue, Comment, ActivityEntry, Attachment, Sprint, IssueLink, CustomFieldDef, ProjectVersion, AutomationRule, ProjectWebhook } from './types';
 import type { Member } from './types';
 import type { QuickFilter } from './quick-filters-store';
 
@@ -16,4 +16,5 @@ export type WorkspaceSnapshot = {
   quickFilters: QuickFilter[];
   versions: ProjectVersion[];
   automationRules: AutomationRule[];
+  projectWebhooks: ProjectWebhook[];
 };

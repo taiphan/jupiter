@@ -139,7 +139,7 @@ export function BacklogView({ projectKey }: { projectKey: string }) {
         activeQuickId={activeQuickId}
         onQuickChange={handleQuickChange}
       />
-      <IssueFiltersBar filters={filters} onChange={handleFiltersChange} />
+      <IssueFiltersBar filters={filters} onChange={handleFiltersChange} projectId={project.id} />
 
       <DndContext
         sensors={sensors}
