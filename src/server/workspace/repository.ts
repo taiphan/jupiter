@@ -42,7 +42,6 @@ export async function loadWorkspace(): Promise<WorkspaceSnapshot> {
     quickFilterRows,
     versionRows,
     automationRows,
-    webhookRows,
   ] = await Promise.all([
     db.select().from(schema.users),
     db.select().from(schema.projects),
@@ -57,8 +56,15 @@ export async function loadWorkspace(): Promise<WorkspaceSnapshot> {
     db.select().from(schema.quickFilters),
     db.select().from(schema.projectVersions),
     db.select().from(schema.automationRules),
-    db.select().from(schema.projectWebhooks),
   ]);
+
+  let webhookRows: (typeof schema.projectWebhooks.$inferSelect)[] = [];
+  try {
+    webhookRows = await db.select().from(schema.projectWebhooks);
+  } catch {
+    // Table may be missing until `npm run db:push` after v1.24.
+    webhookRows = [];
+  }
 
   const membersByProject = new Map<string, string[]>();
   for (const m of memberRows) {
@@ -317,20 +323,24 @@ export async function saveWorkspace(snapshot: WorkspaceSnapshot): Promise<void> 
         });
     }
 
-    for (const w of snapshot.projectWebhooks ?? []) {
-      await tx
-        .insert(schema.projectWebhooks)
-        .values(projectWebhookToInsert(w))
-        .onConflictDoUpdate({
-          target: schema.projectWebhooks.id,
-          set: {
-            name: w.name,
-            url: w.url,
-            secret: w.secret ?? null,
-            events: w.events,
-            enabled: w.enabled,
-          },
-        });
+    try {
+      for (const w of snapshot.projectWebhooks ?? []) {
+        await tx
+          .insert(schema.projectWebhooks)
+          .values(projectWebhookToInsert(w))
+          .onConflictDoUpdate({
+            target: schema.projectWebhooks.id,
+            set: {
+              name: w.name,
+              url: w.url,
+              secret: w.secret ?? null,
+              events: w.events,
+              enabled: w.enabled,
+            },
+          });
+      }
+    } catch {
+      // project_webhooks table not migrated yet — skip without failing the whole sync.
     }
 
     // Remove rows deleted on the client (scoped to known project/issue ids)
@@ -412,15 +422,19 @@ export async function saveWorkspace(snapshot: WorkspaceSnapshot): Promise<void> 
         await tx.delete(schema.automationRules).where(inArray(schema.automationRules.id, toDeleteAutomation));
       }
 
-      const existingWebhooks = await tx
-        .select({ id: schema.projectWebhooks.id })
-        .from(schema.projectWebhooks)
-        .where(inArray(schema.projectWebhooks.projectId, projectIds));
-      const toDeleteWebhooks = existingWebhooks
-        .filter((r) => !snapshotWebhookIds.has(r.id))
-        .map((r) => r.id);
-      if (toDeleteWebhooks.length > 0) {
-        await tx.delete(schema.projectWebhooks).where(inArray(schema.projectWebhooks.id, toDeleteWebhooks));
+      try {
+        const existingWebhooks = await tx
+          .select({ id: schema.projectWebhooks.id })
+          .from(schema.projectWebhooks)
+          .where(inArray(schema.projectWebhooks.projectId, projectIds));
+        const toDeleteWebhooks = existingWebhooks
+          .filter((r) => !snapshotWebhookIds.has(r.id))
+          .map((r) => r.id);
+        if (toDeleteWebhooks.length > 0) {
+          await tx.delete(schema.projectWebhooks).where(inArray(schema.projectWebhooks.id, toDeleteWebhooks));
+        }
+      } catch {
+        // project_webhooks table not migrated yet.
       }
 
       const existingSprints = await tx

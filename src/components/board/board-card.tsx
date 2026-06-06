@@ -76,7 +76,7 @@ export function BoardCard({ issue, onOpen }: BoardCardProps) {
             Blocked
           </Badge>
         )}
-        {issue.labels.slice(0, 3).map((l) => (
+        {(issue.labels ?? []).slice(0, 3).map((l) => (
           <Badge key={l} variant="secondary" className="text-[10px]">{l}</Badge>
         ))}
       </div>

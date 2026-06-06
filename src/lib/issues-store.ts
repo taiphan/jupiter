@@ -525,6 +525,7 @@ export const useIssuesStore = create<IssuesState>()(
           ...p,
           issues: p.issues.map((i) => ({
             ...i,
+            labels: i.labels ?? [],
             fixVersionIds: i.fixVersionIds ?? [],
             watcherIds:
               i.watcherIds ??
@@ -558,7 +559,7 @@ export function applyFilters(
       ) return false;
     }
 
-    if (filters.label && filters.label !== 'all' && !i.labels.includes(filters.label)) return false;
+    if (filters.label && filters.label !== 'all' && !(i.labels ?? []).includes(filters.label)) return false;
 
     if (filters.fixVersionId && filters.fixVersionId !== 'all') {
       const ids = i.fixVersionIds ?? [];

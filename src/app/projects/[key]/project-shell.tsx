@@ -17,6 +17,7 @@ import { hasPermission } from '@/lib/permissions';
 import { ProjectSidebar } from '@/components/layout/project-sidebar';
 import { CreateIssueDialog } from '@/components/issue/create-issue-dialog';
 import { IssueDialog } from '@/components/issue/issue-dialog';
+import { useWorkspaceReady } from '@/lib/use-workspace-ready';
 
 interface ProjectShellProps {
   projectKey: string;
@@ -43,10 +44,20 @@ export function ProjectShell({ projectKey, children }: ProjectShellProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [openIssueId, setOpenIssueId] = useState<string | null>(null);
   const [starred, setStarred] = useState(false);
+  const workspaceReady = useWorkspaceReady();
 
   useEffect(() => {
+    if (!workspaceReady) return;
     if (!project) router.replace('/projects');
-  }, [project, router]);
+  }, [project, router, workspaceReady]);
+
+  if (!workspaceReady) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+        Loading project…
+      </div>
+    );
+  }
 
   if (!project) return null;
 

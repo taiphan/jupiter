@@ -43,7 +43,12 @@ export function applyWorkspaceSnapshot(snapshot: WorkspaceSnapshot): void {
     members: snapshot.members,
   });
   useIssuesStore.setState({
-    issues: snapshot.issues,
+    issues: snapshot.issues.map((i) => ({
+      ...i,
+      labels: i.labels ?? [],
+      fixVersionIds: i.fixVersionIds ?? [],
+      watcherIds: i.watcherIds ?? [],
+    })),
     comments: snapshot.comments,
     activity: snapshot.activity,
     attachments: snapshot.attachments,

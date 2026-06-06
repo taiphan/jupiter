@@ -31,7 +31,7 @@ function issueMatchesQuery(issue: Issue, q: string, members: Member[]): boolean 
   if (issue.key.toLowerCase().includes(q)) return true;
   if (issue.summary.toLowerCase().includes(q)) return true;
   if (issue.description?.toLowerCase().includes(q)) return true;
-  if (issue.labels.some((l) => l.includes(q))) return true;
+  if ((issue.labels ?? []).some((l) => l.includes(q))) return true;
   if (memberNameById(members, issue.assigneeId).includes(q)) return true;
   if (memberNameById(members, issue.reporterId).includes(q)) return true;
   return false;
@@ -86,7 +86,7 @@ export function runGlobalSearch(
 
   const labelSet = new Set<string>();
   for (const issue of allIssueMatches) {
-    for (const label of issue.labels) {
+    for (const label of issue.labels ?? []) {
       if (label.includes(q)) labelSet.add(label);
       if (labelSet.size >= cap.labels) break;
     }

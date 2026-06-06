@@ -27,8 +27,13 @@ export async function GET() {
   const empty = await workspaceIsEmpty();
   if (empty) return json({ empty: true });
 
-  const snapshot = await loadWorkspace();
-  return json(snapshot);
+  try {
+    const snapshot = await loadWorkspace();
+    return json(snapshot);
+  } catch (e) {
+    console.error('[workspace] load failed', e);
+    return error('Failed to load workspace', 500);
+  }
 }
 
 export async function PUT(request: Request) {

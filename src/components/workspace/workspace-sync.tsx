@@ -28,6 +28,7 @@ import { useCustomFieldsStore } from '@/lib/custom-fields-store';
 import { useQuickFiltersStore } from '@/lib/quick-filters-store';
 import { useVersionsStore } from '@/lib/versions-store';
 import { useAutomationStore } from '@/lib/automation-store';
+import { useWebhooksStore } from '@/lib/webhooks-store';
 
 const SAVE_DEBOUNCE_MS = 800;
 
@@ -105,6 +106,7 @@ export function WorkspaceSync() {
       useQuickFiltersStore.subscribe(scheduleSave),
       useVersionsStore.subscribe(scheduleSave),
       useAutomationStore.subscribe(scheduleSave),
+      useWebhooksStore.subscribe(scheduleSave),
     ];
 
     return () => {
